@@ -1253,57 +1253,21 @@ body::before{
 
 <section class="secao-grafico">
   <div class="grafico-card">
+    <div class="gc-titulo">Resultado Acumulado · 2026</div>
     <div class="gc-wrap">
       <div class="gc-left">
-        <div class="gc-eyebrow">Resultado Acumulado · 2026</div>
         <div class="gc-numero" id="gcNumero"><b>+0</b>.0%</div>
         <div class="gc-sub">
-          sobre banca inicial de R$&nbsp;5.000<br>
           <span>● atualizado em tempo real</span>
         </div>
       </div>
       <div class="gc-right">
         <canvas id="chartCanvas"></canvas>
-        <div class="gc-meses" id="gcMeses"></div>
       </div>
     </div>
   </div>
 </section>
 <section class="secao-anual">
-  <div class="anual-wrap">
-
-    <!-- gráfico curva patrimonial em % -->
-    <div class="anual-chart-box">
-      <div class="anual-eyebrow">Curva Patrimonial</div>
-      <div class="anual-titulo">Evolução da Banca · 2026</div>
-      <canvas id="curvaCanvas"></canvas>
-    </div>
-
-    <!-- resumo mensal -->
-    <div class="anual-resumo" id="anualResumo">
-      <div class="anual-mes-label">Resumo do Mês</div>
-      <div class="anual-mes-nome" id="anualMesNome">Junho</div>
-      <div class="anual-stat-rows">
-        <div class="anual-stat">
-          <span>Resultado</span>
-          <span class="up" id="anualResultado">+57.1%</span>
-        </div>
-        <div class="anual-stat">
-          <span>Trades</span>
-          <span id="anualDias">19 trades</span>
-        </div>
-        <div class="anual-stat">
-          <span>Taxa de acerto</span>
-          <span id="anualAcerto">63%</span>
-        </div>
-        <div class="anual-stat">
-          <span>Acumulado 2026</span>
-          <span class="up">+319.1%</span>
-        </div>
-      </div>
-    </div>
-
-  </div>
 
   <!-- barras mensais em % -->
   <div class="anual-barras-box">
@@ -1421,19 +1385,17 @@ body::before{
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script>
-/* ---- gráfico de resultados ---- */
+/* ---- gráfico de resultados (acumulado, 1 ponto por mês) ---- */
 (function(){
-  var meses = ['Jan','Fev','Mar','Abr','Mai','Jun'];
-  var pct   = [0, 34.2, 72.6, 176.5, 191.6, 263.4, 319.1];
-  // ajusta: 7 pontos (Início + 6 meses), labels com Início
-  meses = ['','Jan','Fev','Mar','Abr','Mai','Jun'];
-  var mc = document.getElementById('gcMeses');
-  var mesesVisiveis = ['Jan','Fev','Mar','Abr','Mai','Jun'];
-  mesesVisiveis.forEach(function(m){ var s=document.createElement('span'); s.textContent=m; mc.appendChild(s); });
-  var ultimo=0;
-  for(var i=0;i<pct.length;i++){ if(pct[i]!==null) ultimo=i; }
-  var alvo=pct[ultimo];
-  var num=document.getElementById('gcNumero'), animou=false;
+  var meses  = ['Jan','Fev','Mar','Abr','Mai','Jun'];
+  var pctMes = [35.1, 39.3, 106.5, 15.5, 73.6, 57.1];
+  // acumulado normalizado pra fechar exatamente em 319.1%
+  var acum = [], s = 0, fator = 319.1 / pctMes.reduce(function(a,b){ return a+b; }, 0);
+  pctMes.forEach(function(p){ s += p*fator; acum.push(parseFloat(s.toFixed(1))); });
+  // acum = [34.2, 72.6, 176.5, 191.6, 263.4, 319.1]
+
+  var alvo = acum[acum.length-1];
+  var num = document.getElementById('gcNumero'), animou=false;
   function animaNum(ts,start){
     if(!start) start=ts;
     var p=Math.min((ts-start)/1800,1), ease=1-Math.pow(1-p,3), v=ease*alvo;
@@ -1442,137 +1404,48 @@ body::before{
   }
   var obs=new IntersectionObserver(function(e){ if(e[0].isIntersecting&&!animou){ animou=true; requestAnimationFrame(function(t){ animaNum(t,t); }); } },{threshold:0.3});
   obs.observe(document.querySelector('.secao-grafico'));
+
   var ctx=document.getElementById('chartCanvas').getContext('2d');
-  var grad=ctx.createLinearGradient(0,0,0,150);
+  var grad=ctx.createLinearGradient(0,0,0,210);
   grad.addColorStop(0,'rgba(25,194,181,0.28)'); grad.addColorStop(1,'rgba(25,194,181,0.00)');
-  new Chart(ctx,{ type:'line', data:{ labels:meses, datasets:[{ data:pct, borderColor:'#19C2B5', borderWidth:2.5, backgroundColor:grad, fill:true, tension:0.4, pointRadius:pct.map(function(v,i){ return i===ultimo?6:3; }), pointBackgroundColor:'#19C2B5', pointBorderColor:'rgba(6,10,20,0.9)', pointBorderWidth:2, spanGaps:true }] }, options:{ animation:{duration:1600,easing:'easeOutCubic'}, responsive:true, maintainAspectRatio:false, plugins:{ legend:{display:false}, tooltip:{ backgroundColor:'rgba(6,18,32,0.92)', borderColor:'rgba(25,194,181,0.35)', borderWidth:1, titleColor:'rgba(234,242,255,0.5)', bodyColor:'#19C2B5', bodyFont:{size:14,weight:'600'}, callbacks:{ title:function(i){ var idx=i[0].dataIndex; return idx===0?'Início':meses[idx]+' 2026'; }, label:function(i){ return i.raw!==null?'+'+i.raw.toFixed(1)+'%':''; } } } }, scales:{ x:{display:false}, y:{display:false,min:0,max:340} } } });
-})();
-
-/* ---- gráfico curva patrimonial % e barras mensais ---- */
-(function(){
-  // dados mensais % sobre banca de R$5.000 — baseado no FG Quant 2026
-  var meses = ['Jan','Fev','Mar','Abr','Mai','Jun'];
-  var pctMes = [35.1, 39.3, 106.5, 15.5, 73.6, 57.1];
-  var diasPos = ['16 trades','14 trades','21 trades','18 trades','20 trades','19 trades'];
-  var acertos  = ['50%','64%','71%','56%','70%','63%'];
-
-  // curva acumulada simples (soma dos % mensais = como FG Quant mostra)
-  // Jan:35.1 Fev:39.3 Mar:106.5 Abr:15.5 Mai:73.6 Jun:57.1 = 327.1% soma
-  // Normalizado pra terminar em 319.1% (valor exato do dashboard)
-  var somaTotal = pctMes.reduce(function(a,b){ return a+b; }, 0); // 327.1
-  var fator = 319.1 / somaTotal;
-  var curva = [0];
-  var acum = 0;
-  pctMes.forEach(function(p){
-    acum += p * fator;
-    curva.push(parseFloat(acum.toFixed(1)));
-  });
-  // curva: [0, 34.2, 72.5, 174.8, 190.9, 262.5, 319.1]
-
-  var tradesPorMes = [22, 20, 23, 18, 21, 19];
-
-  // gera pontos interpolados suaves
-  var pontos = [];
-  var labels = [];
-  var mesIdx = [];
-  for(var i=0;i<curva.length-1;i++){
-    var steps = tradesPorMes[i];
-    mesIdx.push(pontos.length);
-    for(var d=0;d<steps;d++){
-      var t = d/steps;
-      var ease = t*t*(3-2*t);
-      var noise = (Math.random()-0.45)*1.2;
-      var val = curva[i] + (curva[i+1]-curva[i])*ease + noise;
-      val = Math.max(curva[i]-1, Math.min(curva[i+1]+1, val));
-      pontos.push(parseFloat(val.toFixed(1)));
-      labels.push('');
-    }
-  }
-  // último ponto fixo em 319.1 — linha chega na borda direita
-  mesIdx.push(pontos.length);
-  pontos.push(319.1);
-  labels.push('');
-
-  // label no centro de cada mês
-  for(var m=0;m<meses.length;m++){
-    var inicio = mesIdx[m];
-    var fim    = m+1 < mesIdx.length ? mesIdx[m+1] : pontos.length-1;
-    var meio   = Math.floor((inicio+fim)/2);
-    labels[meio] = meses[m];
-  }
-
-  var ctx1 = document.getElementById('curvaCanvas');
-  if(!ctx1) return;
-  var g1 = ctx1.getContext('2d');
-  var grad1 = g1.createLinearGradient(0,0,0,260);
-  grad1.addColorStop(0,'rgba(25,194,181,0.30)');
-  grad1.addColorStop(0.6,'rgba(25,194,181,0.08)');
-  grad1.addColorStop(1,'rgba(25,194,181,0.00)');
-
-  new Chart(ctx1,{
+  new Chart(ctx,{
     type:'line',
-    data:{
-      labels: labels,
-      datasets:[{
-        data: pontos,
-        borderColor:'#19C2B5', borderWidth:2.5,
-        backgroundColor:grad1, fill:true, tension:0.5,
-        pointRadius:0, spanGaps:true
-      }]
-    },
+    data:{ labels:meses, datasets:[{
+      data:acum, borderColor:'#19C2B5', borderWidth:2.5,
+      backgroundColor:grad, fill:true, tension:0.4,
+      pointRadius:acum.map(function(v,i){ return i===acum.length-1?7:5; }),
+      pointHoverRadius:acum.map(function(v,i){ return i===acum.length-1?9:7; }),
+      pointBackgroundColor:'#19C2B5', pointBorderColor:'rgba(6,10,20,0.9)', pointBorderWidth:2
+    }] },
     options:{
-      animation:{duration:2000, easing:'easeOutCubic'},
+      animation:{duration:1600,easing:'easeOutCubic'},
       responsive:true, maintainAspectRatio:false,
       plugins:{
         legend:{display:false},
         tooltip:{
-          backgroundColor:'rgba(6,18,32,0.92)',
-          borderColor:'rgba(25,194,181,0.3)', borderWidth:1,
-          titleColor:'rgba(234,242,255,0.5)', bodyColor:'#19C2B5',
-          bodyFont:{size:13,weight:'500'},
+          backgroundColor:'rgba(6,18,32,0.94)', borderColor:'rgba(25,194,181,0.35)', borderWidth:1,
+          titleColor:'rgba(234,242,255,0.6)', bodyColor:'#19C2B5', padding:10,
+          bodyFont:{size:13,weight:'600'},
           callbacks:{
-            title:function(i){ return i[0].label+' 2026'; },
-            label:function(i){ return '+'+i.raw.toFixed(1)+'%'; }
+            title:function(i){ return meses[i[0].dataIndex]+' · 2026'; },
+            label:function(i){ return '+'+pctMes[i.dataIndex].toFixed(1)+'% no mês'; },
+            afterLabel:function(i){ return 'Acumulado: +'+acum[i.dataIndex].toFixed(1)+'%'; }
           }
         }
       },
       scales:{
-        x:{
-          display:true,
-          grid:{display:false},
-          ticks:{
-            color:'rgba(234,242,255,0.45)', font:{size:11, weight:'500'},
-            maxRotation:0, autoSkip:false,
-            callback:function(val,idx){
-              return labels[idx] || '';
-            }
-          }
-        },
-        y:{
-          display:true, position:'left',
-          min:0, max:320,
-          grid:{ color:'rgba(255,255,255,0.04)', drawBorder:false },
-          ticks:{
-            color:'rgba(234,242,255,0.28)', font:{size:8},
-            stepSize:10,
-            callback:function(v){ return v+'%'; }
-          }
-        }
+        x:{ grid:{display:false}, ticks:{ color:'rgba(234,242,255,0.45)', font:{size:11, weight:'500'} } },
+        y:{ display:false, min:0, max:345 }
       }
     }
   });
+})();
 
-  // clique nas barras atualiza o resumo lateral
-  function atualizaResumo(idx){
-    var el = function(id){ return document.getElementById(id); };
-    if(el('anualMesNome')) el('anualMesNome').textContent = meses[idx];
-    if(el('anualResultado')){ el('anualResultado').textContent = '+'+pctMes[idx].toFixed(1)+'%'; }
-    if(el('anualDias')) el('anualDias').textContent = diasPos[idx];
-    if(el('anualAcerto')) el('anualAcerto').textContent = acertos[idx];
-  }
-  atualizaResumo(5); // sempre fixo em Junho (índice 5)
+/* ---- gráfico de barras mensais % ---- */
+(function(){
+  var meses  = ['Jan','Fev','Mar','Abr','Mai','Jun'];
+  var pctMes = [35.1, 39.3, 106.5, 15.5, 73.6, 57.1];
 
-  // --- barras mensais % ---
   var ctx2 = document.getElementById('barrasCanvas');
   if(!ctx2) return;
 
@@ -1590,9 +1463,6 @@ body::before{
     options:{
       animation:{duration:1400, easing:'easeOutCubic'},
       responsive:true, maintainAspectRatio:false,
-      onClick:function(_,els){
-        if(els.length) atualizaResumo(els[0].index);
-      },
       plugins:{
         legend:{display:false},
         tooltip:{
@@ -1607,18 +1477,9 @@ body::before{
         }
       },
       scales:{
-        x:{
-          grid:{display:false},
-          ticks:{ color:'rgba(234,242,255,0.4)', font:{size:10} }
-        },
-        y:{
-          display:true,
-          grid:{ color:'rgba(255,255,255,0.05)', drawBorder:false },
-          ticks:{
-            color:'rgba(234,242,255,0.3)', font:{size:9},
-            callback:function(v){ return v+'%'; }
-          }
-        }
+        x:{ grid:{display:false}, ticks:{ color:'rgba(234,242,255,0.4)', font:{size:11} } },
+        y:{ display:true, grid:{ color:'rgba(255,255,255,0.05)', drawBorder:false },
+            ticks:{ color:'rgba(234,242,255,0.3)', font:{size:9}, callback:function(v){ return v+'%'; } } }
       }
     }
   });
@@ -2187,5 +2048,39 @@ function alternarModo(){
   document.getElementById('modoBtn').textContent = '📱 Mobile';
 })();
 </script>
+<!-- ===== Override de layout do Resultado Acumulado (vence PC e Mobile) ===== -->
+<style id="css-override-resultado">
+  /* título centralizado no topo do card */
+  .gc-titulo{
+    text-align:center;
+    font-size:11px; letter-spacing:.36em; text-transform:uppercase;
+    color:rgba(234,242,255,.5); font-weight:400; margin-bottom:22px;
+  }
+  body.claro .gc-titulo{ color:rgba(11,18,32,.55); }
+
+  /* número + gráfico alinhados ao centro vertical */
+  .gc-wrap{ align-items:center !important; gap:34px; }
+
+  /* reserva a largura do número (dígitos uniformes) p/ não refluir o layout
+     enquanto a contagem anima de +0 → +319.1% — isso evita o canvas redimensionar */
+  .gc-numero{ font-variant-numeric: tabular-nums; min-width: 5em; }
+
+  /* canvas em contêiner de altura fixa e posicionado: trava o tamanho do gráfico */
+  .gc-right{ flex:1 1 300px !important; min-width:240px !important; position:relative; height:210px; }
+  #chartCanvas{ position:absolute; top:0; left:0; width:100% !important; height:100% !important; }
+
+  /* barras na mesma largura do card de cima (760px) */
+  #barrasCanvas{ height:230px !important; }
+  .anual-barras-box{ max-width:760px !important; }
+
+  @media (max-width:600px){
+    .gc-titulo{ font-size:9px; letter-spacing:.22em; margin-bottom:14px; }
+    .gc-wrap{ flex-direction:column !important; align-items:center !important; gap:14px; }
+    .gc-left{ width:100%; text-align:center; }
+    .gc-numero{ min-width:0; }
+    .gc-right{ width:100% !important; min-width:0 !important; flex:none !important; height:200px; }
+    #barrasCanvas{ height:190px !important; }
+  }
+</style>
 </body>
 </html>
