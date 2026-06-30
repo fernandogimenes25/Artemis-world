@@ -1089,7 +1089,6 @@ body::before{
 
 <!-- BOTÃO MODO -->
 <div id="modoBtn" onclick="alternarModo()" style="
-  display:none;
   position:fixed;top:2px;left:50%;transform:translateX(-50%);
   z-index:9999;cursor:pointer;
   background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);
@@ -1692,7 +1691,7 @@ body::before{
     atomCount: 6,
     maxComets: 2,
     // desktop
-    globeR: 0.62, worldX: 0, worldY: 0.05
+    globeR: 0.55, worldX: -0.55, worldY: 0.32
   };
 
   // mobile: globo centralizado e visível
@@ -2081,16 +2080,6 @@ function alternarModo(){
     .gc-numero{ min-width:0; }
     .gc-right{ width:100% !important; min-width:0 !important; flex:none !important; height:200px; }
     #barrasCanvas{ height:190px !important; }
-  }
-
-  /* ===== Título "Artemis World": centralizado + subtítulo, igual em PC e Mobile ===== */
-  .topo{ text-align:center !important; }
-  .traco{ margin-left:auto !important; margin-right:auto !important; }
-  .legenda{ display:block !important; text-align:center !important; }
-  @media (max-width:600px){
-    .topo{ padding-left:16px !important; padding-right:16px !important; text-align:center !important; }
-    .traco{ margin:10px auto 0 !important; }
-    .legenda{ text-align:center !important; }
   }
 </style>
 </body>
