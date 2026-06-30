@@ -1846,11 +1846,6 @@ body::before{
   haze.position.set(CFG.worldX,CFG.worldY,0);
   scene.add(haze);
 
-  // expõe pro alternarModo() conseguir reposicionar o globo ao trocar PC/Mobile
-  window._globe = globe;
-  window._atmo  = atmo;
-  window._haze  = haze;
-
   // nebulosas
   [[CFG.nebula,-7,3.5,-24,11],[CFG.gold,8,-4,-28,9],[CFG.nebula,6,6,-32,12],[0x6E5BD6,-9,-3,-30,10]].forEach(function(b){
     var sp=new THREE.Sprite(new THREE.SpriteMaterial({map:GLOW_TEX,color:b[0],transparent:true,opacity:0.11,blending:THREE.AdditiveBlending,depthWrite:false}));
