@@ -1798,7 +1798,15 @@ body::before{
         if(i===0) x.moveTo(px,py); else x.lineTo(px,py);
       } x.closePath();
     }
-    var lands=[[330,360,120,175,11],[360,640,95,150,37],[1020,430,150,130,59],[1080,690,110,95,83],[1420,400,230,150,101],[1620,720,110,70,127]];
+    var lands=[
+      [290,340,42,58,11],[420,300,30,40,17],[380,430,55,48,23],[300,470,26,34,29],
+      [520,380,38,44,37],[600,320,24,30,43],
+      [960,360,50,42,53],[1040,300,28,36,59],[1080,460,44,50,67],[990,510,22,28,71],
+      [1160,380,32,38,79],
+      [1360,340,58,50,101],[1470,300,30,38,107],[1520,420,46,40,113],[1400,470,24,32,127],
+      [1620,360,36,44,131],[1720,410,28,34,137],
+      [1780,650,40,32,151],[1860,600,24,28,157],[1620,700,34,40,163],[1900,690,20,26,167]
+    ];
     lands.forEach(function(L){
       x.fillStyle=hex(CFG.landLt); blob(L[0],L[1],L[2]+6,L[3]+6,L[4]); x.fill();
       x.fillStyle=hex(CFG.land);   blob(L[0],L[1],L[2],  L[3],  L[4]); x.fill();
@@ -1832,19 +1840,48 @@ body::before{
   })();
 
   // aura
-  var atmo=new THREE.Mesh(new THREE.SphereGeometry(CFG.globeR*1.22,64,64),new THREE.ShaderMaterial({
-    uniforms:{uColor:{value:new THREE.Color(0xBFEFF0)}},
+  var auraUniforms={uColor:{value:new THREE.Color(0xBFEFF0)}, uPow:{value:6.0}, uInt:{value:0.51}};
+  var atmo=new THREE.Mesh(new THREE.SphereGeometry(CFG.globeR*1.07,64,64),new THREE.ShaderMaterial({
+    uniforms:auraUniforms,
     transparent:true,side:THREE.BackSide,depthWrite:false,blending:THREE.AdditiveBlending,
-    vertexShader:'varying float vI; void main(){ vec3 n=normalize(normalMatrix*normal); vec3 e=normalize((modelViewMatrix*vec4(position,1.0)).xyz); vI=pow(1.0+dot(e,n),3.2); gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0); }',
-    fragmentShader:'uniform vec3 uColor; varying float vI; void main(){ gl_FragColor=vec4(uColor,clamp(vI,0.0,1.0)*0.55); }'
+    vertexShader:'varying float vI; uniform float uPow; void main(){ vec3 n=normalize(normalMatrix*normal); vec3 e=normalize((modelViewMatrix*vec4(position,1.0)).xyz); vI=pow(1.0+dot(e,n),uPow); gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0); }',
+    fragmentShader:'uniform vec3 uColor; uniform float uInt; varying float vI; void main(){ gl_FragColor=vec4(uColor,clamp(vI,0.0,1.0)*uInt); }'
   }));
   atmo.position.set(CFG.worldX,CFG.worldY,0);
   scene.add(atmo);
 
-  var haze=new THREE.Sprite(new THREE.SpriteMaterial({map:HAZE_TEX,color:0xCDF2F4,transparent:true,opacity:0.55,blending:THREE.AdditiveBlending,depthWrite:false}));
+  var haze=new THREE.Sprite(new THREE.SpriteMaterial({map:HAZE_TEX,color:0xCDF2F4,transparent:true,opacity:0.65,blending:THREE.AdditiveBlending,depthWrite:false}));
   haze.scale.setScalar(CFG.globeR*3.5);
   haze.position.set(CFG.worldX,CFG.worldY,0);
   scene.add(haze);
+
+  // anéis radar (pulsos expandindo)
+  var radarRings=[];
+  (function(){
+    var ringGeo=new THREE.RingGeometry(1,1.02,64);
+    for(var i=0;i<3;i++){
+      var ring=new THREE.Mesh(ringGeo,new THREE.MeshBasicMaterial({color:0x5EF0E0,transparent:true,opacity:0,side:THREE.DoubleSide,blending:THREE.AdditiveBlending,depthWrite:false}));
+      ring.position.set(CFG.worldX,CFG.worldY,0);
+      ring.userData.delay=i*1.1;
+      scene.add(ring);
+      radarRings.push(ring);
+    }
+  })();
+
+  // partículas orbitando
+  var orbitParticles=[];
+  (function(){
+    var pTex=radialTex([[0,'rgba(255,255,255,1)'],[0.4,'rgba(200,245,245,0.8)'],[1,'rgba(200,245,245,0)']]);
+    var specs=[{r:CFG.globeR*1.9,speed:0.35,tilt:0.25,color:0xEAF2FF,size:0.028},
+               {r:CFG.globeR*2.3,speed:-0.22,tilt:-0.15,color:0x5EF0E0,size:0.024}];
+    specs.forEach(function(s){
+      var sp=new THREE.Sprite(new THREE.SpriteMaterial({map:pTex,color:s.color,transparent:true,blending:THREE.AdditiveBlending,depthWrite:false}));
+      sp.scale.setScalar(s.size);
+      sp.userData=s; sp.userData.phase=Math.random()*Math.PI*2;
+      scene.add(sp);
+      orbitParticles.push(sp);
+    });
+  })();
 
   // nebulosas
   [[CFG.nebula,-7,3.5,-24,11],[CFG.gold,8,-4,-28,9],[CFG.nebula,6,6,-32,12],[0x6E5BD6,-9,-3,-30,10]].forEach(function(b){
@@ -1941,6 +1978,24 @@ body::before{
     if(!dragging){ rotY+=velY;rotX+=velX;velX*=0.94;velY*=0.94;if(Math.abs(velY)<0.0004)velY=0;if(Math.abs(velX)<0.0004)velX=0;rotX=Math.max(-Math.PI/2.1,Math.min(Math.PI/2.1,rotX));if(ehMobile||!interacted||(velX===0&&velY===0))rotY+=AUTO; }
     globe.rotation.y=rotY; globe.rotation.x=rotX;
     atmo.rotation.copy(globe.rotation);
+    auraUniforms.uInt.value=0.51*(0.55+0.45*Math.sin(t*1.8));
+
+    radarRings.forEach(function(ring){
+      var cyc=((t+ring.userData.delay)%3.3)/3.3;
+      var s=CFG.globeR*(1.05+cyc*0.9);
+      ring.scale.set(s,s,s);
+      ring.material.opacity=Math.max(0,(1-cyc)*0.5);
+    });
+
+    orbitParticles.forEach(function(p){
+      var a=t*p.userData.speed+p.userData.phase;
+      var r=p.userData.r;
+      p.position.set(
+        CFG.worldX+Math.cos(a)*r,
+        CFG.worldY+Math.sin(a)*r*p.userData.tilt,
+        Math.sin(a)*r*0.6
+      );
+    });
     globe.children.forEach(function(ch){
       if(ch.isSprite){ var tw=0.5+0.5*Math.sin(t*2.2+ch.userData.phase); ch.scale.setScalar(CFG.globeR*(0.055+0.05*tw)); ch.material.opacity=0.4+0.6*tw; }
     });
