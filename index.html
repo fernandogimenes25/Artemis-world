@@ -1304,7 +1304,7 @@ body::before{
       <div class="portal-step-num">03</div>
       <div class="portal-step-icon">🔍</div>
       <div class="portal-step-titulo">Encontre o Portal Artemis</div>
-      <div class="portal-step-txt">Busque por <strong>"Artemis World"</strong>, confirme o histórico de +319% acumulado e clique em <strong>Assinar</strong>.</div>
+      <div class="portal-step-txt">Busque por <strong>"Artemis World"</strong>, confirme o histórico de +338% acumulado e clique em <strong>Assinar</strong>.</div>
     </div>
     <div class="portal-step">
       <div class="portal-step-num">04</div>
@@ -1388,11 +1388,11 @@ body::before{
 /* ---- gráfico de resultados (acumulado, 1 ponto por mês) ---- */
 (function(){
   var meses  = ['Jan','Fev','Mar','Abr','Mai','Jun'];
-  var pctMes = [35.1, 39.3, 106.5, 15.5, 73.6, 57.1];
-  // acumulado normalizado pra fechar exatamente em 319.1%
-  var acum = [], s = 0, fator = 319.1 / pctMes.reduce(function(a,b){ return a+b; }, 0);
+  var pctMes = [35.1, 39.3, 106.5, 15.5, 73.6, 68.2];
+  // acumulado normalizado pra fechar exatamente em 338.1%
+  var acum = [], s = 0, fator = 338.1 / pctMes.reduce(function(a,b){ return a+b; }, 0);
   pctMes.forEach(function(p){ s += p*fator; acum.push(parseFloat(s.toFixed(1))); });
-  // acum = [34.2, 72.6, 176.5, 191.6, 263.4, 319.1]
+  // acum = [34.2, 72.6, 176.5, 191.6, 263.4, 338.1]
 
   var alvo = acum[acum.length-1];
   var num = document.getElementById('gcNumero'), animou=false;
@@ -1444,7 +1444,7 @@ body::before{
 /* ---- gráfico de barras mensais % ---- */
 (function(){
   var meses  = ['Jan','Fev','Mar','Abr','Mai','Jun'];
-  var pctMes = [35.1, 39.3, 106.5, 15.5, 73.6, 57.1];
+  var pctMes = [35.1, 39.3, 106.5, 15.5, 73.6, 68.2];
 
   var ctx2 = document.getElementById('barrasCanvas');
   if(!ctx2) return;
