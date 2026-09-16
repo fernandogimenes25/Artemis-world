@@ -1246,36 +1246,1607 @@ body::before{
 
 
 
+
+
+<!-- ============================================================
+     SALA DOS ROBÔS + RESULTADO CRIPTO (v15 - CORREÇÃO DEFINITIVA:
+     removido o script órfão do chartCanvas/.secao-grafico que
+     causava o erro real, não pego pelo try/catch por rodar antes,
+     em IIFE própria, sem guarda de null)
+============================================================ -->
+<style>
+#secao-robos { position: relative; z-index: 2; max-width: 100vw; overflow-x: hidden; }
+
+  
+
+
+  header { position: relative; z-index: 5; padding: 24px 24px 10px; text-align: center; }
+  header .brand { font-size: 12px; letter-spacing: 4px; color: #7fa8ff; text-transform: uppercase; }
+  header h1 {
+    font-size: 24px; font-weight: 600; margin-top: 4px;
+    background: linear-gradient(90deg, #9fc4ff, #e8ecf5 50%, #ffd39f);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  header p { color: #767ea0; font-size: 12px; margin-top: 4px; }
+
+  .bigscreen-wrap { position: relative; z-index: 4; display: flex; justify-content: center; padding: 8px 16px 0; }
+  .bigscreen {
+    width: 100%; max-width: 640px; height: 130px;
+    background: linear-gradient(180deg, #051a10, #020c08);
+    border: 1px solid rgba(61,220,132,0.35);
+    border-radius: 8px;
+    position: relative; overflow: hidden;
+    box-shadow: 0 0 30px rgba(61,220,132,0.15), inset 0 0 30px rgba(0,0,0,0.6);
+  }
+  .bigscreen .grid-lines {
+    position: absolute; inset: 0;
+    background-image: repeating-linear-gradient(90deg, rgba(61,220,132,0.08) 0 1px, transparent 1px 40px),
+                       repeating-linear-gradient(0deg, rgba(61,220,132,0.08) 0 1px, transparent 1px 26px);
+  }
+  .bigscreen .headline {
+    position: absolute; top: 8px; left: 14px; right: 14px;
+    font-size: 10px; color: #6effa8; letter-spacing: 1px; text-transform: uppercase;
+    display: flex; gap: 14px; flex-wrap: wrap;
+  }
+  .bigscreen .headline b { color: #d8ffe8; }
+  .bigscreen svg { position: absolute; bottom: 0; left: 0; width: 100%; height: 90px; }
+  .bigscreen .curve-path {
+    fill: none; stroke: #3ddc84; stroke-width: 2;
+    stroke-dasharray: 600; stroke-dashoffset: 600;
+    animation: draw 4s ease-out forwards;
+    filter: drop-shadow(0 0 4px rgba(61,220,132,0.6));
+  }
+  @keyframes draw { to { stroke-dashoffset: 0; } }
+  .bigscreen .pnl-dot {
+    position: absolute; bottom: 46px; right: 60px;
+    font-size: 15px; font-weight: 700; color: #d8ffe8;
+    background: rgba(6,20,12,0.85); padding: 3px 9px; border-radius: 5px;
+    border: 1px solid rgba(61,220,132,0.5);
+  }
+  .bigscreen .ticker-wrap {
+    position: absolute; bottom: 0; left: 0; right: 0; height: 16px;
+    background: rgba(0,0,0,0.55); border-top: 1px solid rgba(61,220,132,0.3);
+    overflow: hidden;
+  }
+  .bigscreen .ticker {
+    white-space: nowrap; font-family: 'Courier New', monospace; font-size: 9px;
+    color: #9ef2ff; text-shadow: 0 0 3px rgba(120,230,255,0.7);
+    padding-top: 3px;
+    animation: tickerscroll 22s linear infinite;
+  }
+  @keyframes tickerscroll { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+
+  /* emblema holografico central */
+  .emblem-wrap {
+    position: relative; z-index: 3; display: flex; justify-content: center;
+    padding: 6px 0 0;
+  }
+  .emblem { width: 60px; height: 60px; position: relative; }
+  .emblem .orb {
+    position: absolute; inset: 0; margin: auto; width: 22px; height: 22px; border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, #d8f3ff, #3fa8ff 55%, #0a3a70 100%);
+    box-shadow: 0 0 16px rgba(90,190,255,0.8);
+    animation: corepulse 2.4s ease-in-out infinite;
+  }
+  .emblem .oring { position: absolute; border: 1px solid rgba(120,200,255,0.5); border-radius: 50%; left: 50%; top: 50%; }
+  .emblem .oring.o1 { width: 60px; height: 22px; margin: -11px 0 0 -30px; animation: spin 9s linear infinite; }
+  .emblem .oring.o2 { width: 22px; height: 60px; margin: -30px 0 0 -11px; animation: spin 12s linear infinite reverse; }
+  .emblem .oring.o3 { width: 44px; height: 44px; margin: -22px 0 0 -22px; border-style: dashed; opacity: 0.5; animation: spin 20s linear infinite; }
+
+  .stats-bar {
+    position: relative; z-index: 5;
+    display: flex; justify-content: center; gap: 10px;
+    padding: 12px 16px 18px; flex-wrap: wrap;
+  }
+  .stat-pill {
+    background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 10px; padding: 7px 14px; font-size: 11px; color: #b8c0d6;
+  }
+  .stat-pill b { color: #6effa8; font-size: 13px; display: block; }
+
+  .room { position: relative; z-index: 2; max-width: 900px; margin: 0 auto; padding: 6px 10px 40px; }
+
+  .backwall {
+    position: relative; z-index: 0;
+    height: 130px; margin: 0 auto 0;
+    max-width: 780px;
+    background:
+      repeating-linear-gradient(90deg, transparent 0 58px, rgba(0,0,0,0.35) 58px 60px),
+      linear-gradient(180deg, #2a2f3d, #1a1e28);
+    border-radius: 8px 8px 0 0;
+    display: flex; align-items: center; justify-content: center; gap: 20px;
+    box-shadow: inset 0 3px 0 rgba(255,255,255,0.06), inset 0 -3px 8px rgba(0,0,0,0.5);
+  }
+  .wall-screen {
+    width: 340px; height: 100px;
+    background: linear-gradient(180deg, #051a10, #020c08);
+    border: 1px solid rgba(61,220,132,0.35);
+    border-radius: 6px;
+    position: relative; overflow: hidden; flex-shrink: 0;
+    box-shadow: 0 0 20px rgba(61,220,132,0.15), inset 0 0 20px rgba(0,0,0,0.6);
+  }
+  .wall-screen .grid-lines {
+    position: absolute; inset: 0;
+    background-image: repeating-linear-gradient(90deg, rgba(61,220,132,0.08) 0 1px, transparent 1px 30px),
+                       repeating-linear-gradient(0deg, rgba(61,220,132,0.08) 0 1px, transparent 1px 20px);
+  }
+  .wall-screen .headline {
+    position: absolute; top: 5px; left: 10px; right: 10px;
+    font-size: 8px; color: #6effa8; letter-spacing: 0.8px; text-transform: uppercase;
+  }
+  .wall-screen .headline b { color: #d8ffe8; }
+  .wall-screen svg { position: absolute; bottom: 0; left: 0; width: 100%; height: 78px; }
+  .wall-screen .curve-path {
+    fill: none; stroke: #3ddc84; stroke-width: 2;
+    stroke-dasharray: 600; stroke-dashoffset: 600;
+    animation: draw 4s ease-out forwards;
+    filter: drop-shadow(0 0 4px rgba(61,220,132,0.6));
+  }
+  .wall-screen .pnl-dot {
+    position: absolute; bottom: 34px; right: 10px;
+    font-size: 11px; font-weight: 700; color: #d8ffe8;
+    background: rgba(6,20,12,0.85); padding: 2px 6px; border-radius: 4px;
+    border: 1px solid rgba(61,220,132,0.5);
+  }
+  .wall-screen .ticker-wrap {
+    position: absolute; bottom: 0; left: 0; right: 0; height: 14px;
+    background: rgba(0,0,0,0.55); border-top: 1px solid rgba(61,220,132,0.3);
+    overflow: hidden;
+  }
+  .wall-screen .ticker {
+    white-space: nowrap; font-family: 'Courier New', monospace; font-size: 8px;
+    color: #9ef2ff; padding-top: 2px; animation: tickerscroll 22s linear infinite;
+  }
+  .backwall::before {
+    content: ''; position: absolute; top: 4px; left: 0; right: 0; height: 2px;
+    background: linear-gradient(90deg, transparent, #4fd8ff, transparent);
+    box-shadow: 0 0 10px rgba(79,216,255,0.7);
+    animation: stripflow 5s linear infinite;
+    background-size: 200% 100%;
+  }
+  @keyframes stripflow { from { background-position: 0% 0; } to { background-position: -200% 0; } }
+  .rivet {
+    position: absolute; width: 4px; height: 4px; border-radius: 50%;
+    background: radial-gradient(circle, #666c7d, #33363f);
+    box-shadow: inset 0 1px 1px rgba(255,255,255,0.3), 0 1px 1px rgba(0,0,0,0.5);
+  }
+  .porthole {
+    position: absolute; top: 10px;
+    width: 46px; height: 46px; border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, #0d1830, #03040a 70%);
+    border: 4px solid #4a4f5e;
+    box-shadow: 0 0 14px rgba(79,216,255,0.25), inset 0 0 10px rgba(0,0,0,0.8);
+    overflow: hidden;
+  }
+  .porthole .pstar { position: absolute; width: 1.5px; height: 1.5px; background: #fff; border-radius: 50%; }
+  .porthole .planet {
+    position: absolute; width: 20px; height: 20px; border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, #ff9f6b, #a04a2a 75%);
+    bottom: -4px; right: -2px; box-shadow: 0 0 8px rgba(255,159,107,0.4);
+  }
+  .porthole .moon {
+    position: absolute; width: 26px; height: 26px; border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, #f4f2ea, #c9c6bc 60%, #9a978d 100%);
+    box-shadow: 0 0 14px rgba(230,230,245,0.5);
+    overflow: hidden;
+  }
+  .porthole .moon .crater { position: absolute; border-radius: 50%; background: rgba(120,118,110,0.4); }
+  .backwall .plate {
+    width: 66px; height: 40px; background: #06080f;
+    border: 1px solid rgba(79,216,255,0.4); border-radius: 5px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 9px; letter-spacing: 1.5px; text-transform: uppercase; color: #7fd8ff;
+    box-shadow: 0 0 8px rgba(79,216,255,0.15);
+    z-index: 1;
+  }
+  .backwall .plate.logo {
+    font-size: 12px; font-weight: 700;
+    background-image: linear-gradient(90deg, #9fc4ff, #ffd39f);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    border-color: rgba(255,211,159,0.35);
+  }
+
+  .floor-area {
+    background:
+      repeating-linear-gradient(90deg, rgba(120,150,190,0.05) 0 1px, transparent 1px 30px),
+      repeating-linear-gradient(0deg, rgba(120,150,190,0.05) 0 1px, transparent 1px 30px),
+      linear-gradient(180deg, #10131c, #0a0c12);
+    padding: 24px 20px 30px;
+    border-radius: 0 0 10px 10px;
+    position: relative;
+    border: 1px solid rgba(120,150,190,0.1);
+    border-top: none;
+  }
+  .hazard-strip {
+    position: absolute; left: 0; right: 0; height: 6px;
+    background: repeating-linear-gradient(45deg, #ffcc00 0 8px, #1a1a1a 8px 16px);
+    opacity: 0.5;
+  }
+  .hazard-strip.top { top: 0; }
+  .hazard-strip.bottom { bottom: 0; }
+
+  /* tubulações no teto */
+  .pipes {
+    position: absolute; top: 6px; left: 0; right: 0; height: 8px;
+    display: flex; gap: 20px; padding: 0 16px; z-index: 1;
+  }
+  .pipe { flex: 1; height: 4px; background: linear-gradient(90deg, #2a2e3a, #3a3f4e, #2a2e3a); border-radius: 2px; position: relative; }
+  .pipe .blink { position: absolute; width: 3px; height: 3px; border-radius: 50%; top: 0.5px; background: #4fd8ff; box-shadow: 0 0 4px #4fd8ff; animation: blink 1.6s ease-in-out infinite; }
+  @keyframes blink { 0%,100% { opacity: 0.2; } 50% { opacity: 1; } }
+
+  /* drone patrulhando */
+  .drone {
+    position: absolute; width: 16px; height: 8px; z-index: 6;
+    animation: dronefly 18s linear infinite;
+  }
+  .drone .disc { width: 16px; height: 6px; background: linear-gradient(160deg,#e4e8f2,#9aa2b8); border-radius: 50%; box-shadow: 0 0 8px rgba(120,200,255,0.4); }
+  .drone .light { position: absolute; left: 50%; bottom: -2px; width: 3px; height: 3px; margin-left: -1.5px; border-radius: 50%; background: #4fd8ff; box-shadow: 0 0 6px #4fd8ff; animation: visorpulse 1s ease-in-out infinite; }
+  @keyframes dronefly { 0% { left: -5%; top: 6%; } 50% { left: 90%; top: 14%; } 100% { left: -5%; top: 6%; } }
+
+  /* beacon de alerta */
+  .beacon {
+    position: absolute; top: -10px; left: 50%; margin-left: -6px;
+    width: 12px; height: 12px; border-radius: 50%;
+    background: radial-gradient(circle, #ff8a80, #a3231f);
+    box-shadow: 0 0 10px rgba(255,90,80,0.8);
+    animation: beaconspin 1.1s linear infinite;
+  }
+  @keyframes beaconspin { 0%,100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.4; transform: scale(0.8); } }
+
+  /* estação de recarga */
+  .charge-station {
+    position: relative; z-index: 2; max-width: 900px; margin: 0 auto;
+    padding: 4px 30px 4px; display: flex; gap: 14px; align-items: flex-end;
+    justify-content: center;
+  }
+  .charge-station .cs-label {
+    font-size: 10px; color: #7fd8ff; letter-spacing: 1px; text-transform: uppercase;
+    align-self: center; margin-right: 6px;
+  }
+  .charge-pod {
+    width: 30px; height: 40px; position: relative;
+    background: linear-gradient(160deg, #171b30, #0b0d1a);
+    border: 1px solid rgba(79,216,255,0.3); border-radius: 6px 6px 3px 3px;
+    display: flex; flex-direction: column; align-items: center; justify-content: flex-end;
+    box-shadow: 0 0 10px rgba(79,216,255,0.15);
+  }
+  .charge-pod .bolt { font-size: 9px; color: #4fd8ff; text-shadow: 0 0 4px #4fd8ff; margin-bottom: 2px; }
+  .charge-pod .bar-bg { width: 4px; height: 22px; background: rgba(255,255,255,0.08); border-radius: 2px; overflow: hidden; display: flex; align-items: flex-end; margin-bottom: 4px; }
+  .charge-pod .bar-fill { width: 100%; background: linear-gradient(180deg, #6effa8, #1e9e5f); animation: chargeup 3.5s ease-in-out infinite; }
+  @keyframes chargeup { 0% { height: 15%; } 50% { height: 90%; } 100% { height: 15%; } }
+
+  /* robô espectador parado, olhando */
+  .spectator { display: flex; flex-direction: column; align-items: center; }
+  .spectator .robot { animation: none; transform: rotate(0deg); }
+
+  /* robôs entrando/saindo da recarga em ciclo */
+  .charge-visitor { position: absolute; width: 22px; height: 30px; z-index: 5; }
+  @keyframes chargecycle1 {
+    0%   { left: 4%; top: 40%; opacity: 1; }
+    18%  { left: 40%; top: 30%; opacity: 1; }
+    32%  { left: 40%; top: 30%; opacity: 1; }
+    35%  { left: 40%; top: 30%; opacity: 0; }
+    65%  { left: 40%; top: 30%; opacity: 0; }
+    68%  { left: 40%; top: 30%; opacity: 1; }
+    85%  { left: 75%; top: 55%; opacity: 1; }
+    100% { left: 4%; top: 40%; opacity: 1; }
+  }
+  @keyframes chargecycle2 {
+    0%   { left: 90%; top: 25%; opacity: 1; }
+    20%  { left: 62%; top: 32%; opacity: 1; }
+    34%  { left: 62%; top: 32%; opacity: 1; }
+    37%  { left: 62%; top: 32%; opacity: 0; }
+    70%  { left: 62%; top: 32%; opacity: 0; }
+    73%  { left: 62%; top: 32%; opacity: 1; }
+    88%  { left: 20%; top: 60%; opacity: 1; }
+    100% { left: 90%; top: 25%; opacity: 1; }
+  }
+  .charge-visitor.cv1 { animation: chargecycle1 26s ease-in-out infinite; }
+  .charge-visitor.cv2 { animation: chargecycle2 31s ease-in-out infinite; }
+
+  /* painel de ranking */
+  .leaderboard {
+    max-width: 220px; margin: 10px auto 0;
+    background: rgba(10,15,25,0.7); border: 1px solid rgba(79,216,255,0.3);
+    border-radius: 8px; padding: 8px 12px;
+    position: relative; z-index: 5;
+  }
+  .leaderboard .lb-title { font-size: 9px; color: #7fd8ff; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 5px; text-align: center; }
+  .leaderboard .lb-row { display: flex; justify-content: space-between; font-size: 10px; padding: 2px 0; color: #d0d6e8; }
+  .leaderboard .lb-row b { color: #6effa8; }
+
+  /* separador pontilhado */
+  .dotted-sep {
+    max-width: 900px; margin: 20px auto 4px;
+    border-top: 1px dashed rgba(79,216,255,0.35);
+    text-align: center; position: relative; z-index: 3;
+  }
+  .dotted-sep span {
+    position: relative; top: -8px; background: #05060a; padding: 0 12px;
+    font-size: 10px; color: #6ef0ff; letter-spacing: 1px; text-transform: uppercase;
+  }
+
+  .charge-station { padding-top: 10px; position: relative; min-height: 90px; }
+  .charge-pod-wrap { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  .charge-wire {
+    width: 2px; height: 14px;
+    background: repeating-linear-gradient(180deg, #4fd8ff 0 3px, transparent 3px 6px);
+    animation: wireflow 1s linear infinite;
+  }
+  @keyframes wireflow { from { background-position: 0 0; } to { background-position: 0 12px; } }
+  .docked-robot { transform: scale(0.85); }
+
+  /* graficos futuristas */
+  .fpanel {
+    max-width: 620px; margin: 14px auto 0; padding: 12px 16px 16px;
+    background: rgba(8,14,24,0.6); border: 1px solid rgba(79,216,255,0.28);
+    border-radius: 10px; position: relative; z-index: 3;
+    box-shadow: 0 0 20px rgba(79,216,255,0.08), inset 0 0 20px rgba(0,0,0,0.4);
+  }
+  .fpanel .fp-title {
+    font-size: 10px; color: #6ef0ff; letter-spacing: 1.5px; text-transform: uppercase;
+    margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;
+  }
+  .fpanel .fp-title .fp-val {
+    color: #6effa8; font-size: 22px; font-weight: 700; letter-spacing: 0;
+    text-shadow: 0 0 10px rgba(110,255,168,0.6);
+  }
+  .daychart { display: flex; align-items: flex-end; gap: 3px; height: 70px; }
+  .daychart .dbar {
+    flex: 1; background: linear-gradient(180deg, #6ef0ff, #1a6fa8);
+    border-radius: 2px 2px 0 0; box-shadow: 0 0 5px rgba(110,240,255,0.5);
+    animation: growbar 1.2s ease-out forwards; transform-origin: bottom; transform: scaleY(0);
+  }
+  .daychart .dbar.neg { background: linear-gradient(180deg, #ff8a80, #a3231f); }
+  .daychart .dbar.today { box-shadow: 0 0 10px rgba(110,240,255,0.9); animation: growbar 1.2s ease-out forwards, todaypulse 1.6s ease-in-out infinite 1.2s; }
+  .daychart .dbar { cursor: pointer; }
+  .yearchart .ybar { cursor: pointer; }
+  .accum-card .ac-dot { cursor: pointer; }
+  @keyframes growbar { to { transform: scaleY(1); } }
+  @keyframes todaypulse { 0%,100% { opacity: 1; } 50% { opacity: 0.6; } }
+
+  .monthgrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .month-card {
+    background: rgba(79,216,255,0.05); border: 1px solid rgba(79,216,255,0.2);
+    border-radius: 8px; padding: 10px; text-align: center;
+  }
+  .month-card .mc-name { font-size: 9px; color: #7fd8ff; letter-spacing: 1px; text-transform: uppercase; }
+  .month-card .mc-val { font-size: 15px; font-weight: 700; margin-top: 4px; }
+  .month-card .mc-val.pos { color: #6effa8; text-shadow: 0 0 6px rgba(110,255,168,0.5); }
+  .month-card .mc-val.neg { color: #ff8a80; text-shadow: 0 0 6px rgba(255,138,128,0.5); }
+
+  /* sala de comando com holograma do globo */
+  .command-room {
+    position: relative; z-index: 2; max-width: 900px; margin: 20px auto 0;
+    display: flex; flex-direction: column; align-items: center; padding-bottom: 10px;
+  }
+  .command-room .cr-label { font-size: 10px; color: #7fd8ff; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 10px; }
+  .holo-pedestal { width: 90px; height: 14px; background: linear-gradient(160deg,#2a2e3d,#12141c); border-radius: 50%; box-shadow: 0 0 16px rgba(79,216,255,0.2); position: relative; }
+  .holo-pedestal::before {
+    content: ''; position: absolute; left: 50%; bottom: 100%; width: 2px; height: 26px;
+    margin-left: -1px; background: linear-gradient(180deg, transparent, rgba(79,216,255,0.6));
+  }
+  .holo-globe { width: 70px; height: 70px; position: relative; margin-bottom: -8px; }
+  .holo-globe .gcore {
+    position: absolute; inset: 8px; border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, rgba(120,220,255,0.25), rgba(10,30,60,0.55) 75%);
+    border: 1px solid rgba(120,220,255,0.4);
+    box-shadow: 0 0 20px rgba(79,216,255,0.35), inset 0 0 16px rgba(79,216,255,0.2);
+  }
+  .holo-globe .gmeridian {
+    position: absolute; inset: 8px; border: 1px solid rgba(120,220,255,0.25); border-radius: 50%;
+  }
+  .holo-globe .gm1 { animation: spin 8s linear infinite; }
+  .holo-globe .gm2 { transform: scaleX(0.4); animation: spin 6s linear infinite reverse; }
+  .holo-globe .gm3 { transform: scaleX(0.7) rotate(60deg); animation: spin 10s linear infinite; }
+  .holo-globe .gdot {
+    position: absolute; width: 4px; height: 4px; border-radius: 50%;
+    box-shadow: 0 0 6px currentColor;
+    animation: corepulse 2s ease-in-out infinite;
+  }
+
+  .records-panel { display: flex; gap: 10px; max-width: 620px; width: 100%; margin-top: 6px; }
+  .record-card {
+    flex: 1; background: rgba(8,14,24,0.6); border: 1px solid rgba(79,216,255,0.25);
+    border-radius: 8px; padding: 10px 8px; text-align: center;
+  }
+  .record-card .rc-icon { font-size: 16px; margin-bottom: 4px; }
+  .record-card .rc-label { font-size: 8px; color: #7fd8ff; letter-spacing: 0.5px; text-transform: uppercase; }
+  .record-card .rc-val { font-size: 13px; font-weight: 700; color: #6effa8; margin-top: 3px; text-shadow: 0 0 6px rgba(110,255,168,0.5); }
+
+  /* sala de jogos - diversão dos robôs */
+  .fun-zone-side {
+    position: absolute; right: 20px; top: 60px; z-index: 4;
+    display: flex; flex-direction: column; gap: 14px; align-items: center;
+    width: 80px;
+  }
+  .fun-zone-side .fz-label { font-size: 8px; color: #7fd8ff; letter-spacing: 1px; text-transform: uppercase; text-align: center; margin-bottom: 4px; }
+  .fun-zone-side .arcade { width: 50px; height: 54px; }
+  .fun-zone-side .holo-spiral { width: 32px; height: 32px; }
+  .fun-zone-side .mini-atom { width: 28px; height: 28px; }
+  .fun-zone-side .pong { width: 30px; height: 22px; }
+  .fun-zone-side .teleporter { width: 42px; height: 42px; }
+  .fun-zone-side .spectator { position: relative; height: 34px; width: 30px; }
+  .fun-zone-side .spectator .robot { position: absolute; left: 50%; margin-left: -13.5px; opacity: 0; transition: opacity 0.6s ease; }
+  .fun-zone-side .spectator .robot.active { opacity: 1; }
+
+  /* portais de teleporte sincronizados */
+  .portal-ring { width: 60px; height: 60px; position: relative; }
+  .center-portal { position: absolute; left: 68%; top: 76%; transform: translate(-50%,-50%); z-index: 3; }
+  .charge-portal-wrap { position: absolute; left: 68%; top: 6px; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; z-index: 3; }
+  .charge-portal-wrap .fz-label { font-size: 9px; color: #7fd8ff; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 6px; }
+  .charge-portal {}
+  .charge-portal .tp-ring, .charge-portal .tp-ring2 { }
+
+  .portal-traveler {
+    position: fixed; width: 22px; height: 30px; z-index: 50;
+    opacity: 0; transform: scale(0.3); pointer-events: none;
+    transition: left 1.1s ease-in-out, top 1.1s ease-in-out, opacity 0.4s ease, transform 0.4s ease;
+  }
+  .portal-traveler.visible { opacity: 1; transform: scale(1); }
+  .fun-zone .fz-label { font-size: 10px; color: #7fd8ff; letter-spacing: 1.5px; text-transform: uppercase; text-align: center; margin-bottom: 8px; }
+  .fun-item { display: flex; flex-direction: column; align-items: center; }
+
+  .arcade { width: 60px; height: 64px; background: linear-gradient(160deg,#171b30,#0b0d1a); border: 1px solid rgba(79,216,255,0.3); border-radius: 6px 6px 3px 3px; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 14px rgba(79,216,255,0.12); position: relative; }
+  .arcade .holo-spiral { width: 40px; height: 40px; position: relative; }
+  .arcade .holo-spiral svg { width: 100%; height: 100%; animation: spin 3s linear infinite; filter: drop-shadow(0 0 4px rgba(79,216,255,0.8)); }
+  .arcade .holo-spiral svg.rev { animation-duration: 5s; animation-direction: reverse; opacity: 0.5; position: absolute; top: 0; left: 0; }
+
+  .teleporter { width: 50px; height: 50px; position: relative; }
+  .portal-ring .tp-ring { position: absolute; inset: 0; border: 3px solid #4fd8ff; border-radius: 50%; box-shadow: 0 0 20px rgba(79,216,255,0.9), inset 0 0 20px rgba(79,216,255,0.5); animation: tpring 2s ease-in-out infinite; }
+  .portal-ring .tp-ring2 { position: absolute; inset: 8px; border: 1.5px dashed rgba(120,230,255,0.8); border-radius: 50%; animation: spin 6s linear infinite; box-shadow: inset 0 0 12px rgba(79,216,255,0.4); }
+  .portal-ring { background: radial-gradient(circle, rgba(79,216,255,0.15), transparent 70%); border-radius: 50%; }
+  .portal-ring .tp-particle { position: absolute; bottom: 50%; left: 50%; width: 2.5px; height: 2.5px; border-radius: 50%; background: #4fd8ff; box-shadow: 0 0 6px #4fd8ff; animation: tprise 1.8s ease-in infinite; }
+  @keyframes tpring { 0%,100% { opacity: 0.7; transform: scale(1); } 50% { opacity: 1; transform: scale(1.08); } }
+  @keyframes tprise { 0% { transform: translate(-50%, 0) scale(1); opacity: 1; } 100% { transform: translate(-50%, -40px) scale(0.3); opacity: 0; } }
+
+  .arcade .mini-atom { width: 34px; height: 34px; position: relative; }
+  .arcade .mini-atom .nucleus { position: absolute; inset: 0; margin: auto; width: 5px; height: 5px; border-radius: 50%; background: radial-gradient(circle, #d8f3ff, #3fa8ff); box-shadow: 0 0 6px rgba(90,190,255,0.9); }
+  .arcade .mini-atom .aring { position: absolute; top: 50%; left: 50%; border: 1px solid rgba(120,200,255,0.6); border-radius: 50%; width: 30px; height: 12px; margin: -6px 0 0 -15px; }
+  .arcade .mini-atom .a1 { animation: spin 3s linear infinite; }
+  .arcade .mini-atom .a2 { animation: spin 3s linear infinite; transform: rotate(60deg); }
+  .arcade .mini-atom .a3 { animation: spin 3s linear infinite; transform: rotate(120deg); }
+
+  .arcade .pong { width: 36px; height: 26px; position: relative; border: 1px solid rgba(79,216,255,0.3); }
+  .arcade .pong .paddle { position: absolute; width: 2px; height: 8px; background: #4fd8ff; box-shadow: 0 0 4px #4fd8ff; }
+  .arcade .pong .p1 { left: 2px; animation: paddle1 2.4s ease-in-out infinite; }
+  .arcade .pong .p2 { right: 2px; animation: paddle2 2.1s ease-in-out infinite; }
+  .arcade .pong .ball { position: absolute; width: 2.5px; height: 2.5px; border-radius: 50%; background: #6effa8; box-shadow: 0 0 4px #6effa8; animation: pongball 1.6s linear infinite; }
+  @keyframes paddle1 { 0%,100% { top: 2px; } 50% { top: 14px; } }
+  @keyframes paddle2 { 0%,100% { top: 14px; } 50% { top: 2px; } }
+  @keyframes pongball { 0% { left: 6px; top: 6px; } 25% { left: 28px; top: 18px; } 50% { left: 6px; top: 20px; } 75% { left: 28px; top: 4px; } 100% { left: 6px; top: 6px; } }
+
+  /* card resultado acumulado - estilo real do site (teal) */
+  .accum-card {
+    max-width: 620px; margin: 20px auto 0; padding: 20px 22px 16px;
+    background: linear-gradient(180deg, rgba(10,20,26,0.8), rgba(6,12,16,0.9));
+    border: 1px solid rgba(45,212,191,0.3); border-radius: 12px;
+    position: relative; z-index: 3;
+    box-shadow: 0 0 26px rgba(45,212,191,0.1), inset 0 0 24px rgba(0,0,0,0.4);
+  }
+  .accum-card .ac-title { font-size: 10px; letter-spacing: 2px; color: #8fa8ac; text-transform: uppercase; text-align: center; }
+  .accum-card .ac-pct { font-size: 40px; font-weight: 300; color: #2dd4bf; text-align: center; margin: 6px 0 2px; text-shadow: 0 0 16px rgba(45,212,191,0.4); }
+  .accum-card .ac-pct b { font-weight: 700; }
+  .accum-card .ac-live { font-size: 10px; color: #2dd4bf; text-align: center; display: flex; align-items: center; justify-content: center; gap: 5px; }
+  .accum-card .ac-live .dot { width: 5px; height: 5px; border-radius: 50%; background: #2dd4bf; box-shadow: 0 0 5px #2dd4bf; animation: corepulse 1.6s ease-in-out infinite; }
+  .accum-card .ac-base { font-size: 10px; color: #6c8a88; text-align: center; margin-top: 4px; }
+  .accum-card .ac-base b { color: #2dd4bf; }
+  .accum-card svg { width: 100%; height: 90px; margin-top: 14px; }
+  .accum-card .ac-line { fill: none; stroke: #2dd4bf; stroke-width: 2; filter: drop-shadow(0 0 3px rgba(45,212,191,0.6)); }
+  .accum-card .ac-dot { fill: #2dd4bf; filter: drop-shadow(0 0 4px rgba(45,212,191,0.8)); }
+  .accum-card { position: relative; }
+  .ac-hover-tip {
+    position: absolute; z-index: 10; pointer-events: none;
+    background: #06121a; border: 1px solid rgba(45,212,191,0.6); border-radius: 5px;
+    padding: 3px 8px; font-size: 11px; color: #2dd4bf; font-weight: 700;
+    transform: translate(-50%, -130%); opacity: 0; transition: opacity 0.15s;
+    box-shadow: 0 0 10px rgba(45,212,191,0.4); white-space: nowrap;
+  }
+  .ac-hover-tip.show { opacity: 1; }
+
+  /* tooltip global bonito, reutilizado em qualquer gráfico */
+  .global-tip {
+    position: fixed; z-index: 999; pointer-events: none;
+    background: #06121a; border: 1px solid rgba(61,220,132,0.75); border-radius: 5px;
+    padding: 4px 9px; font-size: 12px; color: #6effa8; font-weight: 700;
+    text-shadow: 0 0 5px rgba(110,240,255,0.6);
+    box-shadow: 0 0 12px rgba(61,220,132,0.45);
+    opacity: 0; transition: opacity 0.15s ease; white-space: nowrap;
+    transform: translate(-50%, -135%);
+  }
+  .global-tip.show { opacity: 1; }
+  .accum-card .ac-dot.hovered { r: 5; }
+  .accum-card .ac-months { display: flex; justify-content: space-between; font-size: 8px; color: #5a7876; margin-top: 4px; }
+
+  /* crachá MVP */
+  .mvp-badge {
+    position: absolute; top: -34px; left: 50%; transform: translateX(-50%);
+    width: 26px; height: 26px; border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, #fff3c4, #d9a416 70%);
+    border: 1px solid #fff3c4;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; box-shadow: 0 0 12px rgba(255,204,0,0.7);
+    animation: mvpspin 3s ease-in-out infinite;
+    z-index: 3;
+  }
+  @keyframes mvpspin { 0%,100% { transform: translateX(-50%) rotate(-6deg); } 50% { transform: translateX(-50%) rotate(6deg); } }
+
+  /* airlock */
+  .airlock-wrap {
+    position: relative; z-index: 2; max-width: 900px; margin: 20px auto 0;
+    display: flex; flex-direction: column; align-items: center; padding-bottom: 20px;
+  }
+  .airlock-wrap .al-label { font-size: 10px; color: #7fd8ff; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 10px; }
+  .airlock {
+    width: 120px; height: 120px; border-radius: 50%;
+    background: linear-gradient(160deg, #2a2f3d, #0e1017);
+    border: 3px solid #4a4f5e;
+    position: relative; overflow: hidden;
+    box-shadow: 0 0 24px rgba(79,216,255,0.15), inset 0 0 20px rgba(0,0,0,0.6);
+  }
+  .airlock .door-half {
+    position: absolute; top: 0; width: 50%; height: 100%;
+    background: linear-gradient(90deg, #3a3f4e, #23262f);
+    transition: transform 1.4s ease-in-out;
+  }
+  .airlock .door-half.left { left: 0; border-right: 2px solid #4fd8ff; }
+  .airlock .door-half.right { right: 0; border-left: 2px solid #4fd8ff; }
+  .airlock.open .door-half.left { transform: translateX(-100%); }
+  .airlock.open .door-half.right { transform: translateX(100%); }
+  .airlock .al-glow { position: absolute; inset: 0; border-radius: 50%; box-shadow: inset 0 0 30px rgba(79,216,255,0.4); opacity: 0; transition: opacity 0.6s; }
+  .airlock.open .al-glow { opacity: 1; }
+  .airlock .al-passer {
+    position: absolute; bottom: 6px; left: 50%; margin-left: -11px;
+    opacity: 0; transition: opacity 0.3s;
+  }
+  .airlock.open .al-passer { opacity: 1; animation: alwalk 1.6s ease-in-out; }
+  @keyframes alwalk { 0% { transform: translateX(-60px); } 100% { transform: translateX(60px); } }
+
+  .yearchart { display: flex; align-items: flex-end; gap: 6px; height: 90px; }
+  .yearchart .ybar-wrap { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 4px; height: 100%; }
+  .yearchart .ybar {
+    width: 100%; background: linear-gradient(180deg, #6ef0ff, #1a6fa8);
+    border-radius: 3px 3px 0 0; box-shadow: 0 0 6px rgba(110,240,255,0.5);
+    animation: growbarpx 1s ease-out forwards;
+  }
+  .yearchart .ybar.neg { background: linear-gradient(180deg, #ff8a80, #a3231f); }
+  @keyframes growbarpx { from { opacity: 0; } to { opacity: 1; } }
+  .yearchart .ymonth { font-size: 8px; color: #6c7aa8; letter-spacing: 0.5px; }
+
+  /* atomos flutuantes */
+  .atom { position: fixed; z-index: 2; pointer-events: none; opacity: 0.8; }
+  .atom .nucleus { width: 5px; height: 5px; border-radius: 50%; background: radial-gradient(circle, #d8f3ff, #3fa8ff); box-shadow: 0 0 6px rgba(90,190,255,0.9); }
+  .atom .aring { position: absolute; top: 50%; left: 50%; border: 1px solid rgba(120,200,255,0.5); border-radius: 50%; }
+  .atom .ar1 { width: 26px; height: 10px; margin: -5px 0 0 -13px; animation: spin 4s linear infinite; }
+  .atom .ar2 { width: 26px; height: 10px; margin: -5px 0 0 -13px; animation: spin 4s linear infinite; transform: rotate(60deg); }
+  .atom .ar3 { width: 26px; height: 10px; margin: -5px 0 0 -13px; animation: spin 4s linear infinite; transform: rotate(120deg); }
+  @keyframes atomfloat { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-14px); } }
+
+  /* estrelas cadentes */
+  .shootingstar {
+    position: fixed; top: -5%; z-index: 1; width: 2px; height: 2px;
+    background: #fff; border-radius: 50%;
+    box-shadow: 0 0 6px 1px #fff;
+    animation: shoot linear infinite;
+  }
+  .shootingstar::before {
+    content: ''; position: absolute; top: 1px; right: 1px; width: 70px; height: 1px;
+    background: linear-gradient(90deg, rgba(255,255,255,0.9), transparent);
+    transform: rotate(-35deg); transform-origin: right center;
+  }
+  @keyframes shoot { 0% { transform: translate(0,0); opacity: 1; } 85% { opacity: 1; } 100% { transform: translate(-420px, 420px); opacity: 0; } }
+
+  .row-group { margin-bottom: 18px; }
+  .row-group-label {
+    display: inline-block;
+    background: #0a1f14; border: 1px solid rgba(61,220,132,0.4);
+    color: #6effa8; font-size: 10px; font-weight: 700; letter-spacing: 1px;
+    padding: 3px 10px; border-radius: 4px; margin-bottom: 8px;
+  }
+
+  .row { display: flex; gap: 12px; transform: skewX(-16deg); margin-bottom: 6px; }
+  .row-group:nth-child(even) .row { margin-left: 26px; }
+
+  .desk {
+    width: 88px; height: 60px;
+    background: linear-gradient(160deg, #171b30, #0b0d1a);
+    border: 1px solid rgba(127,168,255,0.22);
+    border-radius: 7px; position: relative; flex-shrink: 0;
+    box-shadow: 0 0 12px rgba(80,120,255,0.08), inset 0 0 12px rgba(0,0,0,0.5),
+                0 9px 0 -2px #05060c, 0 9px 7px 0 rgba(0,0,0,0.5);
+  }
+  .desk.idle { opacity: 0.4; }
+
+  .chair {
+    position: absolute; bottom: -13px; left: 50%; margin-left: -7px;
+    width: 14px; height: 14px; background: #1c2038;
+    border: 1px solid rgba(127,168,255,0.22); border-radius: 4px 4px 7px 7px;
+    box-shadow: 0 3px 5px rgba(0,0,0,0.4);
+  }
+
+  .plant { position: absolute; width: 12px; height: 18px; }
+  .plant .pot { width: 9px; height: 7px; background: #2a2440; border-radius: 2px; margin: 10px auto 0; }
+  .plant .leaves { width: 12px; height: 12px; background: radial-gradient(circle, #3ddc84 0%, #1e7a4a 70%); border-radius: 50% 50% 40% 40%; opacity: 0.85; }
+
+  .content {
+    transform: skewX(16deg); position: absolute; left: 50%; bottom: 3px;
+    transform-origin: bottom center; margin-left: -30px; width: 60px;
+    display: flex; flex-direction: column; align-items: center;
+  }
+  .content .screen { display: none; }
+  .screen {
+    width: 34px; height: 34px;
+    position: relative;
+    margin-bottom: 2px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .screen .ring {
+    position: absolute; border-radius: 50%;
+    border: 1px solid rgba(120,200,255,0.55);
+    box-shadow: 0 0 8px rgba(90,190,255,0.35);
+  }
+  .screen .ring.r1 { width: 34px; height: 34px; animation: spin 14s linear infinite; }
+  .screen .ring.r2 { width: 24px; height: 24px; border-style: dashed; animation: spin 10s linear infinite reverse; }
+  .screen .ring.r3 { width: 14px; height: 14px; }
+  @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+  .screen .core-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: radial-gradient(circle, #d8f3ff, #3fa8ff 65%, #0a4a8f);
+    box-shadow: 0 0 9px rgba(90,190,255,0.9);
+    animation: corepulse 2s ease-in-out infinite;
+  }
+  .screen .led-txt {
+    position: absolute; bottom: -3px; left: 50%; transform: translateX(-50%);
+    font-family: 'Courier New', monospace; font-size: 5px; letter-spacing: 0.3px;
+    color: #9ef2ff; text-shadow: 0 0 3px rgba(120,230,255,0.9); white-space: nowrap;
+  }
+
+  .robot { width: 28px; height: 36px; position: relative; animation: bob 2.4s ease-in-out infinite; }
+  .robot .head {
+    width: 17px; height: 15px;
+    background: linear-gradient(160deg, #fafbff, #d5d9e6);
+    border-radius: 9px 9px 7px 7px;
+    margin: 0 auto; position: relative;
+    box-shadow: 0 0 9px rgba(120,190,255,0.5), inset 0 -2px 3px rgba(0,0,0,0.15);
+    border: 1px solid rgba(20,25,45,0.5);
+  }
+  .robot .visor {
+    position: absolute; top: 5px; left: 2px; right: 2px; height: 5px;
+    background: #05060c; border-radius: 3px;
+    display: flex; align-items: center; justify-content: center; overflow: hidden;
+  }
+  .robot .visor .glow { width: 65%; height: 2px; border-radius: 2px; animation: visorpulse 1.8s ease-in-out infinite; }
+  @keyframes visorpulse { 0%,100% { opacity: 0.6; } 50% { opacity: 1; } }
+  .robot .antenna { position: absolute; top: -5px; left: 50%; width: 1.5px; height: 5px; background: #9fb0e0; margin-left: -0.75px; }
+  .robot .torso {
+    width: 20px; height: 17px;
+    background: linear-gradient(160deg, #f0f2f8, #b8bfd2);
+    border-radius: 6px 6px 8px 8px;
+    margin: 2px auto 0; position: relative;
+    box-shadow: 0 0 7px rgba(120,190,255,0.3), inset 0 -3px 4px rgba(0,0,0,0.12);
+    border: 1px solid rgba(20,25,45,0.35);
+  }
+  .robot .core {
+    position: absolute; left: 50%; top: 4px; width: 6px; height: 6px;
+    margin-left: -3px; border-radius: 50%;
+    background: radial-gradient(circle, #bfe8ff 0%, #3fa8ff 60%, #0a4a8f 100%);
+    box-shadow: 0 0 7px rgba(90,190,255,0.9);
+    animation: corepulse 2s ease-in-out infinite;
+  }
+  @keyframes corepulse { 0%,100% { opacity: 0.75; transform: scale(0.92); } 50% { opacity: 1; transform: scale(1); } }
+  .robot .joint {
+    position: absolute; width: 3px; height: 3px; border-radius: 50%;
+    background: #3fa8ff; box-shadow: 0 0 5px rgba(90,190,255,0.9);
+  }
+  .robot .joint.sl { top: 18px; left: -1px; } .robot .joint.sr { top: 18px; right: -1px; }
+  .robot .arm { position: absolute; top: 18px; width: 3px; height: 11px; background: linear-gradient(180deg,#d5d9e6,#9aa2b8); border-radius: 2px; border: 1px solid rgba(20,25,45,0.3); }
+  .robot .arm.l { left: 1px; transform: rotate(8deg); } .robot .arm.r { right: 1px; transform: rotate(-8deg); }
+  .robot.idle .head, .robot.idle .torso { background: #3a3f56; box-shadow: none; border-color: transparent; }
+  .robot.idle .arm { background: #2c3046; } .robot.idle .core, .robot.idle .joint { background: #4a4f66; box-shadow: none; }
+  @keyframes bob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
+
+  .tag { position: absolute; top: -20px; left: 50%; transform: translateX(-50%); font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 5px; background: #0a0c16; white-space: nowrap; animation: floaty 3s ease-in-out infinite; }
+  .tag.pos { border: 1px solid #3ddc84; color: #3ddc84; } .tag.neg { border: 1px solid #ff5d5d; color: #ff5d5d; }
+  @keyframes floaty { 0%,100% { transform: translateX(-50%) translateY(0); } 50% { transform: translateX(-50%) translateY(-3px); } }
+  .symbol {
+    font-size: 8px; color: #6ef0ff; letter-spacing: 0.6px; margin-top: 1px;
+    text-shadow: 0 0 4px rgba(110,240,255,0.9), 0 0 8px rgba(110,240,255,0.5);
+    font-weight: 700; animation: symbolflicker 3s ease-in-out infinite;
+  }
+  @keyframes symbolflicker { 0%,94%,100% { opacity: 1; } 96% { opacity: 0.5; } }
+
+  .walker { position: absolute; width: 22px; height: 30px; z-index: 4; animation-timing-function: linear; animation-iteration-count: infinite; }
+  .walker .head {
+    width: 15px; height: 12px; background: linear-gradient(160deg, #f2f4fa, #c7ccd8);
+    border-radius: 8px 8px 6px 6px; margin: 0 auto; position: relative;
+    box-shadow: 0 0 6px rgba(200,215,255,0.5);
+  }
+  .walker .visor { position: absolute; top: 4px; left: 2px; right: 2px; height: 4px; background: #0a0b12; border-radius: 2px; display: flex; align-items: center; justify-content: center; }
+  .walker .visor .glow { width: 65%; height: 1.5px; border-radius: 2px; background: #6effa8; box-shadow: 0 0 4px #6effa8; animation: visorpulse 1.8s ease-in-out infinite; }
+  .walker .torso { width: 16px; height: 14px; background: linear-gradient(160deg, #e4e8f2, #aab0c4); border-radius: 5px 5px 7px 7px; margin: 2px auto 0; box-shadow: 0 0 5px rgba(200,215,255,0.3); }
+  @keyframes walk1 { 0% { left: 4%; top: 20%; } 25% { left: 45%; top: 8%; } 50% { left: 80%; top: 35%; } 75% { left: 45%; top: 55%; } 100% { left: 4%; top: 20%; } }
+  @keyframes walk2 { 0% { left: 88%; top: 15%; } 30% { left: 55%; top: 45%; } 60% { left: 15%; top: 30%; } 100% { left: 88%; top: 15%; } }
+  @keyframes walk3 { 0% { left: 10%; top: 70%; } 40% { left: 60%; top: 65%; } 70% { left: 30%; top: 80%; } 100% { left: 10%; top: 70%; } }
+  @keyframes walk4 { 0% { left: 70%; top: 10%; } 35% { left: 20%; top: 20%; } 65% { left: 50%; top: 60%; } 100% { left: 70%; top: 10%; } }
+  .walker.w1 { animation-name: walk1; animation-duration: 24s; }
+  .walker.w2 { animation-name: walk2; animation-duration: 28s; }
+  .walker.w3 { animation-name: walk3; animation-duration: 20s; }
+  .walker.w4 { animation-name: walk4; animation-duration: 32s; }
+
+  /* cachorro-robô */
+  .robodog { position: absolute; width: 26px; height: 14px; z-index: 5; animation: dogwalk 17s ease-in-out infinite; }
+  .robodog .dbody { width: 20px; height: 8px; background: linear-gradient(160deg,#e4e8f2,#aab0c4); border-radius: 6px; position: relative; box-shadow: 0 0 5px rgba(160,190,255,0.3); }
+  .robodog .dhead { width: 8px; height: 7px; background: #dfe6f5; border-radius: 3px; position: absolute; left: -6px; top: -1px; }
+  .robodog .deye { width: 2px; height: 2px; border-radius: 50%; background: #6effa8; box-shadow: 0 0 3px #6effa8; position: absolute; left: 1px; top: 2px; animation: visorpulse 1.4s ease-in-out infinite; }
+  .robodog .dtail { width: 6px; height: 2px; background: #aab0c4; position: absolute; right: -5px; top: 1px; border-radius: 2px; transform-origin: left center; animation: tailwag 0.5s ease-in-out infinite; }
+  @keyframes tailwag { 0%,100% { transform: rotate(-15deg); } 50% { transform: rotate(15deg); } }
+  @keyframes dogwalk {
+    0%   { left: 30%; top: 75%; transform: scaleX(1); }
+    23%  { left: 70%; top: 80%; transform: scaleX(1); }
+    25%  { left: 70%; top: 80%; transform: scaleX(-1); }
+    48%  { left: 15%; top: 85%; transform: scaleX(-1); }
+    50%  { left: 15%; top: 85%; transform: scaleX(1); }
+    75%  { left: 55%; top: 78%; transform: scaleX(1); }
+    77%  { left: 55%; top: 78%; transform: scaleX(-1); }
+    100% { left: 30%; top: 75%; transform: scaleX(-1); }
+  }
+  @keyframes dogwalk2 {
+    0%   { left: 82%; top: 22%; transform: scaleX(-1); }
+    28%  { left: 45%; top: 18%; transform: scaleX(-1); }
+    30%  { left: 45%; top: 18%; transform: scaleX(1); }
+    55%  { left: 88%; top: 35%; transform: scaleX(1); }
+    57%  { left: 88%; top: 35%; transform: scaleX(-1); }
+    80%  { left: 60%; top: 15%; transform: scaleX(-1); }
+    82%  { left: 60%; top: 15%; transform: scaleX(1); }
+    100% { left: 82%; top: 22%; transform: scaleX(1); }
+  }
+
+  .cart {
+    position: absolute; bottom: -3px; left: 50%; margin-left: 6px;
+    width: 10px; height: 8px; background: #1c2038; border: 1px solid rgba(127,168,255,0.3);
+    border-radius: 2px; box-shadow: 0 0 5px rgba(80,120,255,0.25);
+  }
+
+  .lounge {
+    position: relative; z-index: 2; max-width: 900px; margin: 0 auto;
+    padding: 30px 30px 60px;
+    display: flex; justify-content: flex-end; align-items: flex-end;
+  }
+  .lounge-deck {
+    background: linear-gradient(160deg, #10141f, #070810);
+    border: 1px solid rgba(79,216,255,0.25);
+    border-radius: 12px;
+    padding: 22px 26px;
+    display: flex; gap: 24px; align-items: flex-end;
+    box-shadow: 0 0 22px rgba(79,216,255,0.08), inset 0 0 20px rgba(0,0,0,0.4);
+  }
+  .lounge-deck .cs-label { font-size: 10px; color: #7fd8ff; letter-spacing: 1px; text-transform: uppercase; position: absolute; margin-top: -14px; }
+  .pool-table {
+    width: 140px; height: 74px;
+    background: linear-gradient(160deg, #0f3d2c, #0a2a1e);
+    border: 4px solid #4a3320; border-radius: 6px;
+    transform: skewX(-16deg);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+  }
+  .couch { width: 60px; height: 34px; background: #2a2e42; border-radius: 6px; transform: skewX(-16deg); box-shadow: 0 8px 16px rgba(0,0,0,0.4); }
+  .lamp { width: 18px; height: 18px; border-radius: 50%; background: radial-gradient(circle, #b8ffcf, #3ddc84); box-shadow: 0 0 20px rgba(61,220,132,0.6); align-self: center; }
+
+  .legend { position: relative; z-index: 5; text-align: center; color: #5c6280; font-size: 11px; padding-bottom: 30px; }
+
+  /* ===== mobile de verdade: redesenha tamanhos, não só encolhe a caixa ===== */
+  @media (max-width: 640px) {
+    #secao-robos { max-width: 100vw; overflow-x: hidden; }
+    .room, .floor-area, .backwall { max-width: 100%; }
+    .floor-area { padding-left: 8px; padding-right: 8px; padding-top: 46px; }
+
+    /* tira o skew isométrico no mobile - fileiras retas cabem melhor */
+    .row { transform: none; gap: 6px; flex-wrap: nowrap; margin-bottom: 22px; }
+    .row-group { margin-bottom: 6px; }
+    .row-group:nth-child(even) .row { margin-left: 10px; }
+    .content { transform: none; margin-left: -26px; width: 52px; }
+
+    .desk { width: 62px; height: 46px; }
+  .content .screen { display: none; }
+    .robot { width: 20px; height: 24px; transform: scale(0.85); }
+    .chair { width: 10px; height: 10px; }
+    .symbol { font-size: 6.5px; }
+    .tag { font-size: 8px; padding: 1px 5px; top: -16px; }
+
+    .backwall { height: 100px; gap: 8px; }
+    .wall-screen { width: 220px; height: 82px; }
+    .wall-screen .ticker-wrap { height: 12px; }
+    .wall-screen svg { height: 60px; }
+    .wall-screen .pnl-dot { bottom: 28px; font-size: 9px; }
+    .porthole { width: 30px; height: 30px; top: 6px; }
+
+    /* mantém a sala de jogos no lado direito - as mesas ficam mais estreitas que a
+       tela no mobile, então sobra espaço lá mesmo. Só encolhe mais um pouco. */
+    .fun-zone-side {
+      right: 4px; top: 96px; width: 58px; gap: 8px; align-items: center;
+    }
+    .fun-zone-side .arcade { width: 40px; height: 42px; }
+    .fun-zone-side .holo-spiral { width: 24px; height: 24px; }
+    .fun-zone-side .mini-atom { width: 22px; height: 22px; }
+    .fun-zone-side .pong { width: 24px; height: 18px; }
+    .fun-zone-side .fz-label { font-size: 7px; }
+    .fun-zone-side .spectator .robot { transform: scale(0.7); }
+    .fun-zone-side .fun-item { position: relative; }
+    .fun-zone-side .spectator {
+      position: absolute; right: 100%; top: 50%; margin: 0 4px 0 0 !important;
+      transform: translateY(-50%);
+    }
+
+    /* portal central - tira de cima dos robôs, joga pro canto */
+    .center-portal { left: auto; right: 4px; top: auto; bottom: 12px; transform: none; }
+    /* portal da recarga - afasta dos pods, que têm mais espaço à direita */
+    .charge-portal-wrap { left: auto; right: 10px; transform: none; }
+
+    .stats-bar { gap: 6px; }
+    .stat-pill { font-size: 10px; padding: 6px 10px; }
+    .leaderboard { max-width: 92%; }
+
+    .anual-wrap, .accum-card, .fpanel { max-width: 100%; }
+  }
+
+  /* ===== MODO CLARO - segue o mesmo padrão do resto do site (body.claro) ===== */
+  body.claro #secao-robos {
+    --luz-bg: rgba(240,248,255,.82);
+    --luz-borda: rgba(11,18,32,.12);
+    --luz-texto: #0B1220;
+    --luz-texto-fraco: rgba(11,18,32,.5);
+  }
+  body.claro #secao-robos header .brand,
+  body.claro #secao-robos header p { color: var(--luz-texto-fraco); }
+  body.claro #secao-robos header h1 {
+    background-image: linear-gradient(90deg, #1a6fa8, #0B1220 50%, #a87a1f);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  body.claro #secao-robos .stat-pill,
+  body.claro #secao-robos .leaderboard,
+  body.claro #secao-robos .record-card,
+  body.claro #secao-robos .month-card,
+  body.claro #secao-robos .fpanel,
+  body.claro #secao-robos .accum-card {
+    background: var(--luz-bg); border-color: var(--luz-borda);
+  }
+  body.claro #secao-robos .stat-pill,
+  body.claro #secao-robos .lb-title, body.claro #secao-robos .lb-row span,
+  body.claro #secao-robos .fp-title, body.claro #secao-robos .mc-name,
+  body.claro #secao-robos .ac-title, body.claro #secao-robos .ac-base,
+  body.claro #secao-robos .rc-label, body.claro #secao-robos .anual-eyebrow,
+  body.claro #secao-robos .cripto-eyebrow {
+    color: var(--luz-texto-fraco);
+  }
+  body.claro #secao-robos .lb-row, body.claro #secao-robos .mc-val,
+  body.claro #secao-robos .fp-title, body.claro #secao-robos .ac-months span {
+    color: var(--luz-texto);
+  }
+  body.claro #secao-robos .stat-pill b { color: #0d8f6a; }
+  /* unifica todos os "verdes de resultado" com o mesmo tom escuro */
+  body.claro #secao-robos .fp-val,
+  body.claro #secao-robos .mc-val.pos,
+  body.claro #secao-robos .anual-stat .up,
+  body.claro #secao-robos .rc-val,
+  body.claro #secao-robos .lb-row b,
+  body.claro #secao-robos .tag.pos,
+  body.claro #secao-robos .ac-pct,
+  body.claro #secao-robos .ac-pct b,
+  body.claro #secao-robos .ac-live,
+  body.claro #secao-robos .ac-base b,
+  body.claro #secao-robos .global-tip {
+    color: #0d8f6a !important;
+    text-shadow: 0 0 8px rgba(13,143,106,0.3) !important;
+  }
+  body.claro #secao-robos .ac-live .dot { background: #0d8f6a !important; box-shadow: 0 0 5px #0d8f6a !important; }
+  body.claro #secao-robos .ac-line { stroke: #0d8f6a !important; }
+  body.claro #secao-robos .ac-dot { fill: #0d8f6a !important; }
+  body.claro #secao-robos .global-tip { background: #06121a !important; border-color: rgba(13,143,106,0.6) !important; }
+  body.claro #secao-robos .desk {
+    background: linear-gradient(160deg, #eef4fb, #d8e3ef);
+    border-color: rgba(11,18,32,.15);
+  }
+  body.claro #secao-robos .symbol { color: rgba(11,18,32,.45); }
+  body.claro #secao-robos .row-group-label { background: rgba(13,143,106,.12); color: #0d8f6a; border-color: rgba(13,143,106,.4); }
+  body.claro #secao-robos .backwall {
+    background: linear-gradient(180deg, #cfd8e2, #b6c0cd);
+  }
+  body.claro #secao-robos .floor-area {
+    background: linear-gradient(180deg, #eef3f9, #dfe7ef);
+  }
+  body.claro #secao-robos .fun-zone-side .arcade,
+  body.claro #secao-robos .charge-pod,
+  body.claro #secao-robos .wall-screen {
+    /* telas continuam escuras mesmo no claro - são "monitores" ligados */
+    background: linear-gradient(180deg, #051a10, #020c08);
+  }
+
+</style>
+
+<section id="secao-robos">
+
+
+<header>
+  <div class="brand">Artemis World</div>
+  <h1>Sala dos Robôs</h1>
+  <p>Cada mesa é um ciclo de hedge ativo — mockup visual, dados ilustrativos</p>
+</header>
+
+<div class="leaderboard">
+  <div class="lb-title">Top ativos do dia</div>
+  <div class="lb-row"><span>1. UBUSDT</span><b>+$6,52</b></div>
+  <div class="lb-row"><span>2. PIEVERSEUSDT</span><b>+$3,21</b></div>
+  <div class="lb-row"><span>3. PLUMEUSDT</span><b>+$2,04</b></div>
+</div>
+
+<div class="stats-bar">
+  <div class="stat-pill">Ciclos hoje <b>247</b></div>
+  <div class="stat-pill">Taxa de acerto <b>94%</b></div>
+  <div class="stat-pill">PnL do dia <b>+$18,42</b></div>
+</div>
+
+<div class="emblem-wrap">
+  <div class="emblem">
+    <div class="oring o1"></div><div class="oring o2"></div><div class="oring o3"></div>
+    <div class="orb"></div>
+  </div>
+</div>
+
+<div class="room">
+  <div class="backwall" id="backwall">
+    <div class="plate logo">Artemis</div>
+    <div class="wall-screen">
+      <div class="grid-lines"></div>
+      <div class="headline"><span><b>5 robôs</b> · 4 em operação</span></div>
+      <svg viewBox="0 0 600 90" preserveAspectRatio="none">
+        <path class="curve-path" d="M0,60 L60,55 L110,58 L150,30 L190,35 L230,42 L270,20 L320,25 L360,15 L410,18 L450,8 L500,12 L560,5 L600,2" />
+      </svg>
+      <div class="pnl-dot">+$18,42</div>
+      <div class="ticker-wrap"><div class="ticker" id="ticker"></div></div>
+    </div>
+    <div class="plate">Live PnL</div>
+  </div>
+  <div class="floor-area" id="floor-area">
+    <div class="hazard-strip top"></div>
+    <div class="hazard-strip bottom"></div>
+    <div class="pipes" id="pipes"></div>
+    <div class="drone"><div class="disc"></div><div class="light"></div></div>
+
+    <div class="portal-ring center-portal" id="center-portal">
+      <div class="tp-ring"></div>
+      <div class="tp-ring2"></div>
+      <div id="tp-particles-center"></div>
+    </div>
+    <div class="walker w1"><div class="head"><div class="visor"><div class="glow"></div></div></div><div class="torso"><div class="core" style="width:4px;height:4px;top:3px;margin-left:-2px;"></div></div></div>
+    <div class="walker w2"><div class="head"><div class="visor"><div class="glow"></div></div></div><div class="torso"><div class="core" style="width:4px;height:4px;top:3px;margin-left:-2px;"></div></div></div>
+    <div class="walker w3"><div class="head"><div class="visor"><div class="glow" style="background:#7fa8ff; box-shadow:0 0 4px #7fa8ff"></div></div></div><div class="torso"><div class="core" style="width:4px;height:4px;top:3px;margin-left:-2px;"></div></div><div class="cart"></div></div>
+    <div class="walker w4"><div class="head"><div class="visor"><div class="glow" style="background:#ffd39f; box-shadow:0 0 4px #ffd39f"></div></div></div><div class="torso"><div class="core" style="width:4px;height:4px;top:3px;margin-left:-2px;"></div></div></div>
+    <div class="robodog" style="animation-name:dogwalk; animation-duration:17s;"><div class="dbody"><div class="dhead"><div class="deye"></div></div><div class="dtail"></div></div></div>
+    <div class="robodog" style="animation: dogwalk2 21s ease-in-out infinite;"><div class="dbody"><div class="dhead"><div class="deye" style="background:#7fa8ff; box-shadow:0 0 3px #7fa8ff;"></div></div><div class="dtail"></div></div></div>
+    <div id="groups"></div>
+
+    <div class="fun-zone-side">
+      <div class="fun-item">
+        <div class="fz-label">Fliperama</div>
+        <div class="arcade"><div class="holo-spiral" id="holo-spiral"></div></div>
+        <div class="spectator" id="spectator-1" style="margin-top:4px;">
+          <div class="robot active"><div class="antenna"></div><div class="head"><div class="visor"><div class="glow" style="background:#6effa8; box-shadow:0 0 4px #6effa8;"></div></div></div><div class="torso"><div class="core"></div></div><div class="arm l"></div><div class="arm r"></div></div>
+          <div class="robot"><div class="antenna"></div><div class="head"><div class="visor"><div class="glow" style="background:#ff8a80; box-shadow:0 0 4px #ff8a80;"></div></div></div><div class="torso"><div class="core"></div></div><div class="arm l"></div><div class="arm r"></div></div>
+        </div>
+      </div>
+      <div class="fun-item">
+        <div class="fz-label">Átomo</div>
+        <div class="arcade"><div class="mini-atom"><div class="aring a1"></div><div class="aring a2"></div><div class="aring a3"></div><div class="nucleus"></div></div></div>
+      </div>
+      <div class="fun-item">
+        <div class="fz-label">Retrô</div>
+        <div class="arcade"><div class="pong"><div class="paddle p1"></div><div class="paddle p2"></div><div class="ball"></div></div></div>
+        <div class="spectator" id="spectator-2" style="margin-top:4px;">
+          <div class="robot active"><div class="antenna"></div><div class="head"><div class="visor"><div class="glow" style="background:#ffd39f; box-shadow:0 0 4px #ffd39f;"></div></div></div><div class="torso"><div class="core"></div></div><div class="arm l"></div><div class="arm r"></div></div>
+          <div class="robot"><div class="antenna"></div><div class="head"><div class="visor"><div class="glow" style="background:#7fa8ff; box-shadow:0 0 4px #7fa8ff;"></div></div></div><div class="torso"><div class="core"></div></div><div class="arm l"></div><div class="arm r"></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="dotted-sep"><span>zona de recarga</span></div>
+
+<div class="charge-station">
+  <div class="charge-portal-wrap">
+    <div class="fz-label">Portal</div>
+    <div class="portal-ring charge-portal" id="charge-portal">
+      <div class="tp-ring"></div>
+      <div class="tp-ring2"></div>
+      <div id="tp-particles-charge"></div>
+    </div>
+  </div>
+  <div class="charge-pod-wrap">
+    <div class="docked-robot">
+      <div class="robot"><div class="antenna"></div><div class="head"><div class="visor"><div class="glow" style="background:#4fd8ff; box-shadow:0 0 4px #4fd8ff;"></div></div></div><div class="torso"><div class="core"></div></div><div class="arm l"></div><div class="arm r"></div></div>
+    </div>
+    <div class="charge-wire"></div>
+    <div class="charge-pod"><div class="bolt">⚡</div><div class="bar-bg"><div class="bar-fill"></div></div></div>
+  </div>
+  <div class="charge-pod-wrap">
+    <div class="docked-robot">
+      <div class="robot"><div class="antenna"></div><div class="head"><div class="visor"><div class="glow" style="background:#4fd8ff; box-shadow:0 0 4px #4fd8ff;"></div></div></div><div class="torso"><div class="core"></div></div><div class="arm l"></div><div class="arm r"></div></div>
+    </div>
+    <div class="charge-wire"></div>
+    <div class="charge-pod"><div class="bolt">⚡</div><div class="bar-bg"><div class="bar-fill" style="animation-delay:1.2s"></div></div></div>
+  </div>
+  <div class="charge-pod-wrap">
+    <div class="charge-wire" style="opacity:0.4;"></div>
+    <div class="charge-pod"><div class="bolt">⚡</div><div class="bar-bg"><div class="bar-fill" style="animation-delay:2s"></div></div></div>
+  </div>
+  <div class="charge-pod-wrap">
+    <div class="charge-wire" style="opacity:0.4;"></div>
+    <div class="charge-pod"><div class="bolt">⚡</div><div class="bar-bg"><div class="bar-fill" style="animation-delay:0.6s"></div></div></div>
+  </div>
+  <div class="charge-visitor cv1"><div class="robot" style="animation:none;"><div class="antenna"></div><div class="head"><div class="visor"><div class="glow" style="background:#4fd8ff; box-shadow:0 0 4px #4fd8ff;"></div></div></div><div class="torso"><div class="core"></div></div><div class="arm l"></div><div class="arm r"></div></div></div>
+  <div class="charge-visitor cv2"><div class="robot" style="animation:none;"><div class="antenna"></div><div class="head"><div class="visor"><div class="glow" style="background:#ffd39f; box-shadow:0 0 4px #ffd39f;"></div></div></div><div class="torso"><div class="core"></div></div><div class="arm l"></div><div class="arm r"></div></div></div>
+</div>
+
+<div class="fpanel">
+  <div class="fp-title"><span>Rentabilidade do mês — setembro</span><span class="fp-val" id="month-total">+$0,00</span></div>
+  <div class="daychart" id="daychart"></div>
+</div>
+
+<div class="fpanel">
+  <div class="fp-title"><span>Histórico — últimos 3 meses</span></div>
+  <div class="monthgrid" id="monthgrid"></div>
+</div>
+
+<div class="accum-card">
+  <div class="ac-title">Resultado Acumulado · Cripto · 2026</div>
+  <div class="ac-pct" id="ac-pct">+0.0%</div>
+  <div class="ac-live"><div class="dot"></div>atualizado em tempo real</div>
+  <div class="ac-base" id="ac-base">Base: <b>1.000 ARTE</b> → <b id="ac-base-final">1.000 ARTE</b></div>
+  <svg viewBox="0 0 560 90" preserveAspectRatio="none" id="ac-svg"></svg>
+  <div class="ac-months" id="ac-months"></div>
+  <div class="ac-hover-tip" id="ac-hover-tip"></div>
+</div>
+
+<div class="global-tip" id="global-tip"></div>
+
+<div class="fpanel">
+  <div class="fp-title"><span>Resultado do ano</span><span class="fp-val" id="year-total">+$0,00</span></div>
+  <div class="yearchart" id="yearchart"></div>
+</div>
+
+<div class="command-room">
+  <div class="cr-label">Sala de comando</div>
+  <div class="holo-globe">
+    <div class="gcore"></div>
+    <div class="gmeridian gm1"></div>
+    <div class="gmeridian gm2"></div>
+    <div class="gmeridian gm3"></div>
+    <div id="globe-dots"></div>
+  </div>
+  <div class="holo-pedestal"></div>
+
+  <div class="records-panel">
+    <div class="record-card"><div class="rc-icon">🏆</div><div class="rc-label">Melhor ciclo</div><div class="rc-val">+23,8 ARTE</div></div>
+    <div class="record-card"><div class="rc-icon">🔥</div><div class="rc-label">Sequência</div><div class="rc-val">14 vitórias</div></div>
+    <div class="record-card"><div class="rc-icon">⚡</div><div class="rc-label">Mais rápido</div><div class="rc-val">18 min</div></div>
+  </div>
+</div>
+
+<div class="airlock-wrap">
+  <div class="al-label">Acesso ao setor B</div>
+  <div class="airlock" id="airlock">
+    <div class="door-half left"></div>
+    <div class="door-half right"></div>
+    <div class="al-glow"></div>
+    <div class="al-passer">
+      <div class="robot" style="animation:none;"><div class="antenna"></div><div class="head"><div class="visor"><div class="glow" style="background:#7fa8ff; box-shadow:0 0 4px #7fa8ff;"></div></div></div><div class="torso"><div class="core"></div></div><div class="arm l"></div><div class="arm r"></div></div>
+    </div>
+  </div>
+</div>
+
+<div class="legend">Robôs verdes = ciclo no lucro · vermelhos = em reforço/prejuízo momentâneo · cinza = aguardando próximo ciclo · azul/dourado = em ronda pela sala</div>
+
+
+</section>
+
+<script>
+try {
+
+const grupos = [
+  { symbol: "UBUSDT", robos: [2.38, 0.58, 0.19, -0.31] },
+  { symbol: "PIEVERSEUSDT", robos: [1.12, 1.71, -0.62] },
+  { symbol: "PUMPUSDT", robos: [-0.46, 0.27, null] },
+  { symbol: "PLUMEUSDT", robos: [0.94, -0.33, 0.41] },
+  { symbol: "CCUSDT", robos: [-0.21, 1.03, null] },
+  { symbol: "AKTUSDT", robos: [0.85, -0.19, 0.52] },
+  { symbol: "STRKUSDT", robos: [0.61, 0.44, -0.28] },
+  { symbol: "JASMYUSDT", robos: [0.39, -0.15, 0.29, null] },
+  { symbol: "ATOMUSDT", robos: [0.47, 0.22, -0.11] },
+  { symbol: "PONSUSDT", robos: [0.33, -0.09, null] },
+  { symbol: "SKYUSDT", robos: [0.18, 0.07, null] },
+];
+
+// pontinhos no holo-globo representando os ativos ativos
+const globeDotsEl = document.getElementById('globe-dots');
+const dotPositions = [
+  { left: '30%', top: '35%', color: '#6effa8' },
+  { left: '60%', top: '25%', color: '#6effa8' },
+  { left: '45%', top: '55%', color: '#ff8a80' },
+  { left: '70%', top: '50%', color: '#6effa8' },
+  { left: '25%', top: '60%', color: '#6effa8' },
+];
+dotPositions.forEach(d => {
+  const dot = document.createElement('div');
+  dot.className = 'gdot';
+  dot.style.left = d.left; dot.style.top = d.top; dot.style.color = d.color; dot.style.background = d.color;
+  document.querySelector('.holo-globe').appendChild(dot);
+});
+
+// espiral 3D holográfica no fliperama
+const spiralSvg = (extra) => {
+  let path = 'M20,20 ';
+  for (let a = 0; a <= 720; a += 8) {
+    const r = (a / 720) * 17;
+    const rad = a * Math.PI / 180;
+    path += `L${(20 + r * Math.cos(rad)).toFixed(1)},${(20 + r * Math.sin(rad)).toFixed(1)} `;
+  }
+  return `<svg viewBox="0 0 40 40" class="${extra}"><path d="${path}" fill="none" stroke="#4fd8ff" stroke-width="1.2"/></svg>`;
+};
+document.getElementById('holo-spiral').innerHTML = spiralSvg('') + spiralSvg('rev');
+
+// partículas subindo dos dois portais
+[['tp-particles-center', 6], ['tp-particles-charge', 5]].forEach(([id, n]) => {
+  const el = document.getElementById(id);
+  for (let i = 0; i < n; i++) {
+    const p = document.createElement('div');
+    p.className = 'tp-particle';
+    p.style.left = (30 + Math.random() * 40) + '%';
+    p.style.animationDelay = (Math.random() * 1.8).toFixed(2) + 's';
+    el.appendChild(p);
+  }
+});
+
+// robô viajante - teleporta de verdade entre o portal central e o da recarga
+function criarViajante() {
+  const t = document.createElement('div');
+  t.className = 'portal-traveler';
+  t.innerHTML = `<div class="robot" style="animation:none;"><div class="antenna"></div><div class="head"><div class="visor"><div class="glow" style="background:#4fd8ff; box-shadow:0 0 4px #4fd8ff;"></div></div></div><div class="torso"><div class="core"></div></div><div class="arm l"></div><div class="arm r"></div></div>`;
+  document.body.appendChild(t);
+  return t;
+}
+const viajante = criarViajante();
+
+function posicionarEm(elId, travelerEl) {
+  const el = document.getElementById(elId);
+  if (!el) return;
+  const rect = el.getBoundingClientRect();
+  travelerEl.style.left = (rect.left + rect.width / 2 - 11) + 'px';
+  travelerEl.style.top = (rect.top + rect.height / 2 - 15) + 'px';
+}
+
+function cicloTeleporte() {
+ try {
+  // aparece no portal central
+  viajante.style.transition = 'none';
+  posicionarEm('center-portal', viajante);
+  requestAnimationFrame(() => {
+    try {
+      viajante.style.transition = 'opacity 0.4s ease, transform 0.4s ease';
+      viajante.classList.add('visible');
+    } catch (e) { console.error('Sala dos Robos - erro (teleporte 1):', e); }
+  });
+
+  setTimeout(() => {
+    try {
+      viajante.classList.remove('visible');
+      setTimeout(() => {
+        try {
+          viajante.style.transition = 'none';
+          posicionarEm('charge-portal', viajante);
+          requestAnimationFrame(() => {
+            try {
+              viajante.style.transition = 'opacity 0.4s ease, transform 0.4s ease';
+              viajante.classList.add('visible');
+            } catch (e) { console.error('Sala dos Robos - erro (teleporte 2):', e); }
+          });
+        } catch (e) { console.error('Sala dos Robos - erro (teleporte 3):', e); }
+      }, 450);
+    } catch (e) { console.error('Sala dos Robos - erro (teleporte 4):', e); }
+  }, 2200);
+
+  setTimeout(() => {
+    try {
+      viajante.classList.remove('visible');
+      setTimeout(() => {
+        try {
+          viajante.style.transition = 'none';
+          posicionarEm('center-portal', viajante);
+          requestAnimationFrame(() => {
+            try {
+              viajante.style.transition = 'opacity 0.4s ease, transform 0.4s ease';
+              viajante.classList.add('visible');
+            } catch (e) { console.error('Sala dos Robos - erro (teleporte 5):', e); }
+          });
+        } catch (e) { console.error('Sala dos Robos - erro (teleporte 6):', e); }
+      }, 450);
+    } catch (e) { console.error('Sala dos Robos - erro (teleporte 7):', e); }
+  }, 5800);
+
+  setTimeout(() => {
+    try { viajante.classList.remove('visible'); }
+    catch (e) { console.error('Sala dos Robos - erro (teleporte 8):', e); }
+  }, 8200);
+ } catch (e) { console.error('Sala dos Robos - erro (cicloTeleporte):', e); }
+}
+setInterval(cicloTeleporte, 14000);
+setTimeout(cicloTeleporte, 3000);
+
+
+
+const groupsEl = document.getElementById('groups');
+
+// tooltip global bonito - reutilizado em qualquer barra/ponto de gráfico
+const globalTip = document.getElementById('global-tip');
+function mostrarTip(target, texto) {
+  const r = target.getBoundingClientRect();
+  globalTip.style.left = (r.left + r.width / 2) + 'px';
+  globalTip.style.top = r.top + 'px';
+  globalTip.textContent = texto;
+  globalTip.classList.add('show');
+}
+function esconderTip() { globalTip.classList.remove('show'); }
+
+
+// gráfico de rentabilidade do mês (dias já fechados + hoje em destaque)
+const dias = [];
+let acumulado = 0;
+const hoje = 18;
+for (let d = 1; d <= hoje; d++) {
+  const v = (Math.random() * 3.2 - 0.6);
+  acumulado += v;
+  dias.push(v);
+}
+const daychartEl = document.getElementById('daychart');
+const maxAbs = Math.max(...dias.map(v => Math.abs(v)));
+dias.forEach((v, i) => {
+  const bar = document.createElement('div');
+  bar.className = 'dbar' + (v < 0 ? ' neg' : '') + (i === dias.length - 1 ? ' today' : '');
+  const heightPct = Math.max(6, (Math.abs(v) / maxAbs) * 100);
+  bar.style.height = heightPct + '%';
+  bar.style.animationDelay = (i * 0.04) + 's';
+  bar.addEventListener('mouseenter', () => mostrarTip(bar, `Dia ${i + 1}: ${v >= 0 ? '+' : ''}$${v.toFixed(2)}`));
+  bar.addEventListener('mouseleave', esconderTip);
+  daychartEl.appendChild(bar);
+});
+document.getElementById('month-total').textContent = (acumulado >= 0 ? '+' : '') + '$' + acumulado.toFixed(2);
+document.getElementById('month-total').style.color = acumulado >= 0 ? '#6effa8' : '#ff8a80';
+
+// resultado acumulado de cripto (baseado no backtest de 1 ano da cesta final: +387,8%)
+// base de 1.000 ARTE como referência, igual pedido - a % é o que importa, a base só ajuda a visualizar
+const BASE_ARTE = 1000;
+const cumPctMeses = [15, 42, 38, 95, 130, 210, 265, 310, 387.8]; // acumulado % por mês, jan-set
+const nomesMesesCurtos = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set'];
+
+const acSvg = document.getElementById('ac-svg');
+const W = 560, H = 90, pad = 10;
+const maxPct = Math.max(...cumPctMeses);
+const pts = cumPctMeses.map((v, i) => {
+  const x = pad + (i / (cumPctMeses.length - 1)) * (W - pad * 2);
+  const y = H - pad - (v / maxPct) * (H - pad * 2);
+  return [x, y];
+});
+const pathD = pts.map((p, i) => (i === 0 ? 'M' : 'L') + p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(' ');
+let svgInner = `<path class="ac-line" d="${pathD}"/>`;
+pts.forEach((p, i) => {
+  svgInner += `<circle class="ac-dot" id="ac-dot-${i}" cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="3"/>`;
+});
+acSvg.innerHTML = svgInner;
+// desenha a linha usando o comprimento REAL do traço (evita cortar o final)
+const acLinePath = acSvg.querySelector('.ac-line');
+if (acLinePath) {
+  const totalLen = acLinePath.getTotalLength();
+  acLinePath.style.strokeDasharray = totalLen;
+  acLinePath.style.strokeDashoffset = totalLen;
+  acLinePath.getBoundingClientRect(); // força reflow antes de animar
+  acLinePath.style.transition = 'stroke-dashoffset 3.5s ease-out';
+  requestAnimationFrame(() => { acLinePath.style.strokeDashoffset = '0'; });
+}
+acSvg.querySelectorAll('.ac-dot').forEach((dot, i) => {
+  dot.addEventListener('mouseenter', () => mostrarTip(dot, `${nomesMesesCurtos[i]}: +${cumPctMeses[i].toFixed(1)}%`));
+  dot.addEventListener('mouseleave', esconderTip);
+});
+
+document.getElementById('ac-months').innerHTML = nomesMesesCurtos.map(m => `<span>${m}</span>`).join('');
+
+const pctFinal = cumPctMeses[cumPctMeses.length - 1];
+document.getElementById('ac-pct').innerHTML = `+<b>${pctFinal.toFixed(1)}</b>%`;
+document.getElementById('ac-base-final').textContent = Math.round(BASE_ARTE * (1 + pctFinal / 100)).toLocaleString('pt-BR') + ' ARTE';
+
+// gráfico "Resultado do ano" em $ - deriva dos mesmos % mensais, aplicados sobre os $500 da cesta
+const nomesMeses = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+const CAPITAL_CESTA = 500;
+const valoresAno = [];
+let pctAnterior = 0;
+cumPctMeses.forEach(pctAcum => {
+  const deltaPct = pctAcum - pctAnterior;
+  valoresAno.push((deltaPct / 100) * CAPITAL_CESTA);
+  pctAnterior = pctAcum;
+});
+while (valoresAno.length < 12) valoresAno.push(null);
+const yearchartEl = document.getElementById('yearchart');
+
+let totalAno = 0;
+const maxAno = Math.max(...valoresAno.filter(v => v !== null).map(v => Math.abs(v)));
+valoresAno.forEach((v, i) => {
+  const wrap = document.createElement('div');
+  wrap.className = 'ybar-wrap';
+  if (v !== null) {
+    totalAno += v;
+    const bar = document.createElement('div');
+    bar.className = 'ybar' + (v < 0 ? ' neg' : '');
+    const barPx = Math.max(6, (Math.abs(v) / maxAno) * 70);
+    bar.style.height = barPx + 'px';
+    if (i < cumPctMeses.length) {
+      bar.addEventListener('mouseenter', () => {
+        mostrarTip(bar, `${nomesMeses[i]}: ${v >= 0 ? '+' : ''}$${v.toFixed(2)}`);
+        const dot = document.getElementById('ac-dot-' + i);
+        if (dot) dot.classList.add('hovered');
+      });
+      bar.addEventListener('mouseleave', () => {
+        esconderTip();
+        const dot = document.getElementById('ac-dot-' + i);
+        if (dot) dot.classList.remove('hovered');
+      });
+    } else {
+      bar.addEventListener('mouseenter', () => mostrarTip(bar, `${nomesMeses[i]}: ${v >= 0 ? '+' : ''}$${v.toFixed(2)}`));
+      bar.addEventListener('mouseleave', esconderTip);
+    }
+    bar.style.animationDelay = (i * 0.06) + 's';
+    wrap.appendChild(bar);
+  } else {
+    const bar = document.createElement('div');
+    bar.style.height = '2px'; bar.style.width = '100%'; bar.style.background = 'rgba(120,150,190,0.2)';
+    wrap.appendChild(bar);
+  }
+  const label = document.createElement('div');
+  label.className = 'ymonth';
+  label.textContent = nomesMeses[i];
+  wrap.appendChild(label);
+  yearchartEl.appendChild(wrap);
+});
+document.getElementById('year-total').textContent = (totalAno >= 0 ? '+' : '') + '$' + totalAno.toFixed(2);
+document.getElementById('year-total').style.color = totalAno >= 0 ? '#6effa8' : '#ff8a80';
+
+// átomos flutuando pela cena
+[[8, 20], [88, 12], [15, 60], [92, 68]].forEach(([left, top], i) => {
+  const atom = document.createElement('div');
+  atom.className = 'atom';
+  atom.style.left = left + '%'; atom.style.top = top + '%';
+  atom.style.animation = `atomfloat ${5 + i}s ease-in-out infinite`;
+  atom.innerHTML = `<div class="aring ar1"></div><div class="aring ar2"></div><div class="aring ar3"></div><div class="nucleus"></div>`;
+  document.body.appendChild(atom);
+});
+
+// estrelas cadentes ocasionais
+function lancarEstrelaCadente() {
+  try {
+    const star = document.createElement('div');
+    star.className = 'shootingstar';
+    star.style.left = (20 + Math.random() * 60) + '%';
+    star.style.animationDuration = (1.2 + Math.random()) + 's';
+    document.body.appendChild(star);
+    setTimeout(() => {
+      try { star.remove(); } catch (e) { console.error('Sala dos Robos - erro (remover estrela):', e); }
+    }, 2500);
+  } catch (e) { console.error('Sala dos Robos - erro (estrela cadente):', e); }
+}
+setInterval(lancarEstrelaCadente, 3500);
+lancarEstrelaCadente();
+
+// airlock abre e fecha periodicamente, com robô atravessando
+function abrirAirlock() {
+  try {
+    const al = document.getElementById('airlock');
+    if (!al) return;
+    al.classList.add('open');
+    setTimeout(() => {
+      try { al.classList.remove('open'); }
+      catch (e) { console.error('Sala dos Robos - erro (airlock fechar):', e); }
+    }, 2200);
+  } catch (e) { console.error('Sala dos Robos - erro (airlock abrir):', e); }
+}
+setInterval(abrirAirlock, 9000);
+setTimeout(abrirAirlock, 2000);
+
+// espectadores do fliperama revezando (um chega, outro sai)
+function revezarEspectador(id, intervalo) {
+  const container = document.getElementById(id);
+  if (!container) return;
+  const robots = container.querySelectorAll('.robot');
+  if (!robots.length) return;
+  let atual = 0;
+  setInterval(() => {
+    try {
+      robots[atual].classList.remove('active');
+      atual = (atual + 1) % robots.length;
+      robots[atual].classList.add('active');
+    } catch (e) { console.error('Sala dos Robos - erro (revezar espectador):', e); }
+  }, intervalo);
+}
+revezarEspectador('spectator-1', 6000);
+revezarEspectador('spectator-2', 7500);
+
+
+// histórico dos últimos 3 meses
+const meses = [
+  { nome: 'Julho', val: 142.30 },
+  { nome: 'Agosto', val: 198.75 },
+  { nome: 'Setembro', val: acumulado },
+];
+const monthgridEl = document.getElementById('monthgrid');
+meses.forEach(m => {
+  const pos = m.val >= 0;
+  const card = document.createElement('div');
+  card.className = 'month-card';
+  card.innerHTML = `<div class="mc-name">${m.nome}</div><div class="mc-val ${pos ? 'pos' : 'neg'}">${pos ? '+' : ''}$${m.val.toFixed(2)}</div>`;
+  monthgridEl.appendChild(card);
+});
+
+
+const eventos = [
+  "UBUSDT alvo atingido +$2.38",
+  "PLUMEUSDT reforço 1 executado",
+  "PIEVERSEUSDT alvo atingido +$1.71",
+  "CCUSDT novo ciclo iniciado",
+  "PUMPUSDT alvo atingido +$0.27",
+  "UBUSDT novo ciclo iniciado",
+];
+const tickerText = eventos.join("   •   ");
+document.getElementById('ticker').textContent = tickerText + "   •   " + tickerText;
+
+
+// tubulações com luzes piscando
+const pipesEl = document.getElementById('pipes');
+for (let i = 0; i < 4; i++) {
+  const pipe = document.createElement('div');
+  pipe.className = 'pipe';
+  for (let j = 0; j < 4; j++) {
+    const b = document.createElement('div');
+    b.className = 'blink';
+    b.style.left = (10 + j * 25) + '%';
+    b.style.animationDelay = (Math.random() * 1.5).toFixed(2) + 's';
+    pipe.appendChild(b);
+  }
+  pipesEl.appendChild(pipe);
+}
+
+
+// vigias com estrelas e planeta, e rebites decorativos na parede
+const backwall = document.getElementById('backwall');
+[60, 720].forEach((left, i) => {
+  const p = document.createElement('div');
+  p.className = 'porthole';
+  p.style.left = left + 'px';
+  let starsHtml = '';
+  for (let s = 0; s < 10; s++) {
+    starsHtml += `<div class="pstar" style="left:${Math.random()*40}px; top:${Math.random()*40}px;"></div>`;
+  }
+  if (i === 0) {
+    // vigia com a Lua - referência ao nome Artemis (deusa da lua)
+    p.innerHTML = starsHtml + `
+      <div class="moon">
+        <div class="crater" style="width:5px;height:5px;top:4px;left:6px;"></div>
+        <div class="crater" style="width:3px;height:3px;top:12px;left:14px;"></div>
+        <div class="crater" style="width:4px;height:4px;top:16px;left:5px;"></div>
+        <div class="crater" style="width:2px;height:2px;top:8px;left:16px;"></div>
+      </div>`;
+  } else {
+    p.innerHTML = starsHtml + '<div class="planet"></div>';
+  }
+  backwall.appendChild(p);
+});
+for (let i = 0; i < 14; i++) {
+  const r = document.createElement('div');
+  r.className = 'rivet';
+  r.style.left = (20 + i * 58) + 'px';
+  r.style.top = '8px';
+  backwall.appendChild(r);
+}
+
+
+// acha o melhor pnl entre todos os robôs pra dar o crachá MVP
+let melhorPnl = -Infinity, melhorSymbol = null, melhorIdx = -1;
+grupos.forEach(g => g.robos.forEach((pnl, i) => {
+  if (pnl !== null && pnl > melhorPnl) { melhorPnl = pnl; melhorSymbol = g.symbol; melhorIdx = i; }
+}));
+
+grupos.forEach(g => {
+  const wrap = document.createElement('div');
+  wrap.className = 'row-group';
+
+  const row = document.createElement('div');
+  row.className = 'row';
+
+  g.robos.forEach((pnl, idx) => {
+    const desk = document.createElement('div');
+    if (pnl === null) {
+      desk.className = 'desk idle';
+      desk.innerHTML = `
+        <div class="chair"></div>
+        <div class="content">
+          <div class="screen" style="opacity:0.35;">
+            <div class="ring r1"></div><div class="ring r2"></div><div class="ring r3"></div>
+            <div class="core-dot" style="background:#4a4f66; box-shadow:none;"></div>
+            <div class="led-txt">standby</div>
+          </div>
+          <div class="robot idle">
+            <div class="antenna"></div>
+            <div class="head"><div class="visor"><div class="glow" style="background:#555c78; box-shadow:none;"></div></div></div>
+            <div class="torso"><div class="core"></div></div>
+            <div class="joint sl"></div><div class="joint sr"></div>
+            <div class="arm l"></div><div class="arm r"></div>
+          </div>
+          <div class="symbol">aguardando</div>
+        </div>`;
+    } else {
+      const pos = pnl >= 0;
+      const glowColor = pos ? '#6effa8' : '#ff8a80';
+      const ringColor = pos ? 'rgba(110,255,168,0.55)' : 'rgba(255,138,128,0.55)';
+      const showPlant = Math.random() > 0.75;
+      const isMvp = g.symbol === melhorSymbol && idx === melhorIdx;
+      desk.className = 'desk';
+      desk.innerHTML = `
+        <div class="chair"></div>
+        ${showPlant ? '<div class="plant" style="right:-9px; top:5px;"><div class="leaves"></div><div class="pot"></div></div>' : ''}
+        <div class="tag ${pos ? 'pos' : 'neg'}">${pos ? '+' : ''}$${pnl.toFixed(2)}</div>
+        <div class="content">
+          ${isMvp ? '<div class="mvp-badge">★</div>' : ''}
+          <div class="screen">
+            <div class="ring r1" style="border-color:${ringColor}"></div>
+            <div class="ring r2" style="border-color:${ringColor}"></div>
+            <div class="ring r3" style="border-color:${ringColor}"></div>
+            <div class="core-dot"></div>
+            <div class="led-txt">${g.symbol.replace('USDT','')} ${pos ? '+' : ''}${pnl.toFixed(2)}</div>
+          </div>
+          <div class="robot">
+            ${!pos ? '<div class="beacon"></div>' : ''}
+            <div class="antenna"></div>
+            <div class="head"><div class="visor"><div class="glow" style="background:${glowColor}; box-shadow:0 0 5px ${glowColor}"></div></div></div>
+            <div class="torso"><div class="core"></div></div>
+            <div class="joint sl"></div><div class="joint sr"></div>
+            <div class="arm l"></div><div class="arm r"></div>
+          </div>
+          <div class="symbol">${g.symbol}</div>
+        </div>`;
+    }
+    row.appendChild(desk);
+  });
+
+  wrap.appendChild(row);
+  groupsEl.appendChild(wrap);
+});
+
+setInterval(() => {
+  try {
+    document.querySelectorAll('.tag').forEach(el => {
+      el.style.animationDuration = (2.6 + Math.random()).toFixed(1) + 's';
+    });
+  } catch (e) { console.error('Sala dos Robos - erro (flicker tags):', e); }
+}, 4000);
+
+} catch (e) { console.error('Sala dos Robos - erro:', e); }
+</script>
+
+<!-- ============================================================
+     FIM DA SALA DOS ROBÔS
+============================================================ -->
+
 <!-- SEÇÃO COMO FUNCIONA -->
 
 
 <!-- SEÇÃO RESULTADO ANUAL -->
 
-<section class="secao-grafico">
-  <div class="grafico-card">
-    <div class="gc-titulo">Resultado Acumulado · 2026</div>
-    <div class="gc-wrap">
-      <div class="gc-left">
-        <div class="gc-numero" id="gcNumero"><b>+0</b>.0%</div>
-        <div class="gc-sub">
-          <span>● atualizado em tempo real</span>
-        </div>
-      </div>
-      <div class="gc-right">
-        <canvas id="chartCanvas"></canvas>
-      </div>
-    </div>
-  </div>
-</section>
-<section class="secao-anual">
-
-  <!-- barras mensais em % -->
-  <div class="anual-barras-box">
-    <div class="anual-eyebrow" style="margin-bottom:16px;">Resultado por Mês (%)</div>
-    <canvas id="barrasCanvas"></canvas>
-  </div>
-
-</section>
+<!-- secao-grafico (WIN/WDO) removida nesta versão combinada -->
+<!-- secao-anual (WIN/WDO) removida nesta versão combinada -->
 
 <!-- SEÇÃO ATIVAR PORTAL -->
 <section class="secao-portal">
@@ -1383,63 +2954,9 @@ body::before{
 
 </section>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js" crossorigin="anonymous"></script>
 <script>
-/* ---- gráfico de resultados (acumulado, 1 ponto por mês) ---- */
-(function(){
-  var meses  = ['Jan','Fev','Mar','Abr','Mai','Jun'];
-  var pctMes = [35.1, 39.3, 106.5, 15.5, 73.6, 68.2];
-  // acumulado normalizado pra fechar exatamente em 338.1%
-  var acum = [], s = 0, fator = 338.1 / pctMes.reduce(function(a,b){ return a+b; }, 0);
-  pctMes.forEach(function(p){ s += p*fator; acum.push(parseFloat(s.toFixed(1))); });
-  // acum = [34.2, 72.6, 176.5, 191.6, 263.4, 338.1]
-
-  var alvo = acum[acum.length-1];
-  var num = document.getElementById('gcNumero'), animou=false;
-  function animaNum(ts,start){
-    if(!start) start=ts;
-    var p=Math.min((ts-start)/1800,1), ease=1-Math.pow(1-p,3), v=ease*alvo;
-    num.innerHTML='<b>+'+Math.floor(v)+'</b>.'+Math.round((v%1)*10)+'%';
-    if(p<1) requestAnimationFrame(function(t){ animaNum(t,start); });
-  }
-  var obs=new IntersectionObserver(function(e){ if(e[0].isIntersecting&&!animou){ animou=true; requestAnimationFrame(function(t){ animaNum(t,t); }); } },{threshold:0.3});
-  obs.observe(document.querySelector('.secao-grafico'));
-
-  var ctx=document.getElementById('chartCanvas').getContext('2d');
-  var grad=ctx.createLinearGradient(0,0,0,210);
-  grad.addColorStop(0,'rgba(25,194,181,0.28)'); grad.addColorStop(1,'rgba(25,194,181,0.00)');
-  new Chart(ctx,{
-    type:'line',
-    data:{ labels:meses, datasets:[{
-      data:acum, borderColor:'#19C2B5', borderWidth:2.5,
-      backgroundColor:grad, fill:true, tension:0.4,
-      pointRadius:acum.map(function(v,i){ return i===acum.length-1?7:5; }),
-      pointHoverRadius:acum.map(function(v,i){ return i===acum.length-1?9:7; }),
-      pointBackgroundColor:'#19C2B5', pointBorderColor:'rgba(6,10,20,0.9)', pointBorderWidth:2
-    }] },
-    options:{
-      animation:{duration:1600,easing:'easeOutCubic'},
-      responsive:true, maintainAspectRatio:false,
-      plugins:{
-        legend:{display:false},
-        tooltip:{
-          backgroundColor:'rgba(6,18,32,0.94)', borderColor:'rgba(25,194,181,0.35)', borderWidth:1,
-          titleColor:'rgba(234,242,255,0.6)', bodyColor:'#19C2B5', padding:10,
-          bodyFont:{size:13,weight:'600'},
-          callbacks:{
-            title:function(i){ return meses[i[0].dataIndex]+' · 2026'; },
-            label:function(i){ return '+'+pctMes[i.dataIndex].toFixed(1)+'% no mês'; },
-            afterLabel:function(i){ return 'Acumulado: +'+acum[i.dataIndex].toFixed(1)+'%'; }
-          }
-        }
-      },
-      scales:{
-        x:{ grid:{display:false}, ticks:{ color:'rgba(234,242,255,0.45)', font:{size:11, weight:'500'} } },
-        y:{ display:false, min:0, max:345 }
-      }
-    }
-  });
-})();
+/* gráfico de resultados (chartCanvas) removido - dependia da secao-grafico que não existe mais nesta versão */
 
 /* ---- gráfico de barras mensais % ---- */
 (function(){
@@ -1670,7 +3187,7 @@ body::before{
 </script>
 
 <!-- ============ Three.js ============ -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" crossorigin="anonymous"></script>
 <script>
 (function(){
   "use strict";
@@ -1969,6 +3486,9 @@ body::before{
   var clock=new THREE.Clock();
   function resize(){ renderer.setSize(window.innerWidth,window.innerHeight,false); camera.aspect=window.innerWidth/window.innerHeight; camera.updateProjectionMatrix(); }
   window.addEventListener('resize',resize); resize();
+  // fix Safari iOS: innerHeight chega errado no 1o instante (barra de endereço ainda animando)
+  setTimeout(resize,150); setTimeout(resize,500); setTimeout(resize,1000);
+  window.addEventListener('orientationchange', function(){ setTimeout(resize,300); });
 
   /* --- loop --- */
   function animate(){
