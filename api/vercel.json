@@ -4,5 +4,10 @@
       "path": "/api/atualizar-resultado",
       "schedule": "0 3 * * *"
     }
-  ]
+  ],
+  "functions": {
+    "api/atualizar-resultado.js": {
+      "regions": ["sin1"]
+    }
+  }
 }
