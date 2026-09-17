@@ -96,6 +96,9 @@ module.exports = async function handler(req, res) {
       return res.status(500).json({ erro: 'Faltando variável de ambiente. Confira BINANCE_API_KEY, BINANCE_API_SECRET, GITHUB_TOKEN, GITHUB_OWNER, GITHUB_REPO.' });
     }
 
+    // diagnóstico: mostra de qual região da Vercel essa função rodou
+    console.log('Rodando na região:', process.env.VERCEL_REGION);
+
     // início do ano corrente (pra acumulado 2026)
     const inicioAno = new Date(new Date().getFullYear(), 0, 1).getTime();
     // início do dia de hoje (fuso Brasil, UTC-3)
@@ -141,6 +144,6 @@ module.exports = async function handler(req, res) {
     return res.status(200).json({ ok: true, dados });
   } catch (erro) {
     console.error(erro);
-    return res.status(500).json({ erro: erro.message });
+    return res.status(500).json({ erro: erro.message, regiao_vercel: process.env.VERCEL_REGION || 'desconhecida' });
   }
 };
